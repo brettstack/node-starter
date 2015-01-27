@@ -1,0 +1,5 @@
+-R spec
+-u bdd
+--recursive
+--reporter spec
+--timeout 5000

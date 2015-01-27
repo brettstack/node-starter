@@ -1,0 +1,53 @@
+{
+  "name": "rpg-server",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "set DEBUG=*,-express:router*,-express:application & node-debug --no-preload --debug-brk true --save-live-edit %appdata%\\npm\\node_modules\\gulp\\bin\\gulp.js develop",
+    "start2": "node-inspector & nodemon --debug apiServer.js localhost 5000",
+    "test": "mocha",
+    "install-local": "npm install -g mocha & npm install -g node-inspector & npm install"
+  },
+  "dependencies": {
+    "async": "^0.9.0",
+    "aws-sdk": "^2.1.6",
+    "bcryptjs": "^2.1.0",
+    "body-parser": "~1.10.0",
+    "cluster-service": "^1.0.5",
+    "compression": "~1.2.2",
+    "cookie-parser": "~1.3.3",
+    "cors": "^2.5.3",
+    "debug": "^2.1.1",
+    "epilogue": "^0.3.3",
+    "express": "~4.10.6",
+    "express-validator": "^2.8.0",
+    "glob": "~4.3.1",
+    "globby": "^1.1.0",
+    "helmet": "^0.5.4",
+    "jsonwebtoken": "^3.2.2",
+    "lodash": "~2.4.1",
+    "method-override": "~2.3.0",
+    "moment": "^2.9.0",
+    "morgan": "~1.5.0",
+    "nodemailer": "^1.3.0",
+    "passport": "^0.2.1",
+    "passport-facebook": "^1.0.3",
+    "passport-google": "^0.3.0",
+    "passport-google-oauth": "^0.1.5",
+    "passport-local": "^1.0.0",
+    "pg": "^4.2.0",
+    "pg-hstore": "^2.3.1",
+    "request": "^2.51.0",
+    "satellizer": "^0.8.8",
+    "sequelize": "^2.0.0-rc8"
+  },
+  "devDependencies": {
+    "gulp": "~3.8.10",
+    "gulp-livereload": "~2.1.1",
+    "gulp-nodemon": "~1.0.4",
+    "gulp-sass": "~1.2.4",
+    "supertest": "^0.15.0",
+    "chai": "^1.10.0",
+    "mocha": "^2.1.0"
+  }
+}
