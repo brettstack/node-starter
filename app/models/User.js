@@ -26,7 +26,7 @@ module.exports = function(sequelize, DataTypes) {
     paranoid: true,
     classMethods: {
       associate: function(models) {
-        User.hasMany(models.Task)
+        User.hasMany(models.PasswordResetRequest)
       }
     },
     instanceMethods: {

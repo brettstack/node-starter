@@ -7,8 +7,8 @@ var app = express();
 require('./config/express')(app, config);
 
 models.sequelize
-  // .sync()
-  .authenticate()
+  .sync()
+  // .authenticate()
   .complete(function(err) {
     if (err) {
       throw err[0];

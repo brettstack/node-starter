@@ -10,7 +10,7 @@ module.exports = function(app) {
 
 router.param('userId', function(req, res, next, userId) {
   User.find(userId, {
-    include: [models.Task]
+    include: [models.PasswordResetRequest]
   }).then(function(user) {
     req.user = user;
     next();

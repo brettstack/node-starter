@@ -8,8 +8,9 @@ var request = require('request');
 var qs = require('querystring');
 var createToken = require('../utils/createToken');
 var jwt = require('jsonwebtoken');
-
+var mailer = require('../utils/mailer');
 var User = models.User;
+var PasswordResetRequest = models.PasswordResetRequest;
 
 module.exports = function(app) {
   app.use('/', router);
@@ -23,7 +24,7 @@ router.route('/auth/register')
     }
   }).then(function(existingUser) {
     if (existingUser) {
-      return res.status(409).send({ message: 'Email is already taken' });
+      return res.status(409).json({ message: 'Email is already taken' });
     }
 
     bcrypt.genSalt(10, function(err, salt) {
@@ -35,7 +36,9 @@ router.route('/auth/register')
         });
 
         user.save().then(function() {
-          res.send({ token: createToken(user) });
+          res.json({ token: createToken(user) });
+
+          mailer.sendEmail(user.email, 'Welcome to __APP_NAME_TITLE__', 'hello, ' + user.displayName);
         });
       });
     });
@@ -44,29 +47,108 @@ router.route('/auth/register')
   });
 });
 
-router.route('/auth/local')
+router.route('/auth/password-reset-request')
+.get(function(req, res, next) {
+  PasswordResetRequest.findOne({
+    where: {
+      uuid: req.body.uuid
+    }
+  }).then(function(passwordResetRequest) {
+    console.log(passwordResetRequest);
+    if (!passwordResetRequest) {
+      return res.status(404).end();
+    }else {
+      return res.status(200).end();
+    }
+  }, function(err){
+    console.log(err);
+    if(err) next(err);
+  });
+});
+
+router.route('/auth/password-reset-request/reset-password')
 .post(function(req, res) {
+  PasswordResetRequest.findOne({
+    where: {
+      uuid: req.body.uuid
+    }
+  }).then(function(passwordResetRequest) {
+    if (!passwordResetRequest) {
+      return res.status(404).json({error: 'No password reset request'})
+    }
+
+    User.findOne({
+      where: {
+        id: passwordResetRequest.userId
+      }
+    }).then(function(user) {
+      if(!user){
+        return res.status(404).json({error: 'No user'})
+      }
+
+      bcrypt.genSalt(10, function(err, salt) {
+        bcrypt.hash(req.body.password, salt, function(err, hash) {
+          user.save().then(function() {
+            passwordResetRequest.destroy();
+            res.json({ token: createToken(user) });
+          });
+        });
+      });
+
+    }, function(err){
+    });
+  }, function(err){
+  });
+});
+
+router.route('/auth/forgot-password')
+.post(function(req, res, next) {
+  User.findOne({
+    where: {
+      email: req.body.email
+    }
+  }).then(function(existingUser) {
+    if (existingUser) {
+      mailer.sendEmail(existingUser.email, '__APP_NAME_TITLE__: Reset Password Request', 'A password reset request was issued for your __APP_NAME_TITLE__ account. If this was not you, you can safely ignore this message. If you want to reset your password, follow this link to reset your password <a href="http://localhost:4000/reset-password?uuid=xxx>http://localhost:4000/reset-password?uuid=xxx</a>', function(err, response){
+        if(err) next(err);
+        return res.status(200).end();
+      });
+    } else{
+      mailer.sendEmail(req.body.email, '__APP_NAME_TITLE__: No Account Found', 'A password reset request was issued for a __APP_NAME_TITLE__ account under this account, but no such account exists. If you would like to create an account, you can do so here: <a href="http://localhost:4000/register">http://localhost:4000/register</a>.', function(err, response){
+        if(err) next(err);
+        return res.status(200).end();
+      });
+    }
+  }, function(err){
+    if(err) next(err);
+  });
+});
+
+router.route('/auth/local')
+.post(function(req, res, next) {
   User.findOne({
     where: {
       email: req.body.email
     }
   }).then(function(user) {
     if (!user) {
-      return res.status(401).send({ message: 'No account with that email' });
+      return res.status(401).json({ message: 'No account with that email' });
     }
 
     user.comparePassword(req.body.password, function(err, isMatch) {
+      if(err) next(err);
+
       if (!isMatch) {
-        return res.status(401).send({ message: 'Password mismatch' });
+        return res.status(401).json({ message: 'Password mismatch' });
       }
 
-      res.send({ token: createToken(user) });
+      res.json({ token: createToken(user) });
     });
   });
 });
 
 router.route('/auth/facebook')
-  .post(function(req, res) {
+  .post(function(req, res, next) {
     var accessTokenUrl = 'https://graph.facebook.com/oauth/access_token';
     var graphApiUrl = 'https://graph.facebook.com/me';
     var params = {
@@ -83,7 +165,7 @@ router.route('/auth/facebook')
       json: true
     }, function(err, response, accessToken) {
       if (response.statusCode !== 200) {
-        return res.status(500).send({
+        return res.status(500).json({
           message: accessToken.error.message
         });
       }
@@ -97,7 +179,7 @@ router.route('/auth/facebook')
         json: true
       }, function(err, response, profile) {
         if (response.statusCode !== 200) {
-          return res.status(500).send({
+          return res.status(500).json({
             message: profile.error.message
           });
         }
@@ -109,7 +191,7 @@ router.route('/auth/facebook')
             }
           }).then(function(existingUser) {
             if (existingUser) {
-              return res.status(409).send({
+              return res.status(409).json({
                 message: 'There is already a Facebook account that belongs to you'
               });
             }
@@ -117,7 +199,7 @@ router.route('/auth/facebook')
             var payload = jwt.verify(token);
             User.findById(payload.sub).then(function(user) {
               if (!user) {
-                return res.status(400).send({
+                return res.status(400).json({
                   message: 'User not found'
                 });
               }
@@ -125,7 +207,7 @@ router.route('/auth/facebook')
               user.displayName = user.displayName || profile.name;
               user.save().then(function() {
                 var token = createToken(user, secrets.facebook.clientSecret);
-                res.send({
+                res.json({
                   token: token
                 });
               });
@@ -141,7 +223,7 @@ router.route('/auth/facebook')
             debug(existingUser);
             if (existingUser) {
               var token = createToken(existingUser, secrets.facebook.clientSecret);
-              return res.send({
+              return res.json({
                 token: token
               });
             }
@@ -151,7 +233,7 @@ router.route('/auth/facebook')
             debug(user);
             user.save().then(function() {
               var token = createToken(user, secrets.facebook.clientSecret);
-              res.send({
+              res.json({
                 token: token
               });
             });
@@ -190,19 +272,19 @@ router.route('/auth/google')
           }
         }).then(function(existingUser) {
           if (existingUser) {
-            return res.status(409).send({ message: 'There is already a Google account that belongs to you' });
+            return res.status(409).json({ message: 'There is already a Google account that belongs to you' });
           }
           var token = req.headers.authorization.split(' ')[1];
           var payload = jwt.decode(token);
           User.findById(payload.sub, function(user) {
             if (!user) {
-              return res.status(400).send({ message: 'User not found' });
+              return res.status(400).json({ message: 'User not found' });
             }
             user.google = profile.sub;
             user.displayName = user.displayName || profile.name;
             user.save().then(function() {
               var token = createToken(user);
-              res.send({ token: token });
+              res.json({ token: token });
             });
           });
         });
@@ -214,14 +296,14 @@ router.route('/auth/google')
           }
         }).then(function(existingUser) {
           if (existingUser) {
-            return res.send({ token: createToken(existingUser) });
+            return res.json({ token: createToken(existingUser) });
           }
           var user = User.build();
           user.google = profile.sub;
           user.displayName = profile.name;
           user.save().then(function(err) {
             var token = createToken(user);
-            res.send({ token: token });
+            res.json({ token: token });
           });
         });
       }
