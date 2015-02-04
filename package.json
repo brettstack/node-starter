@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node apiServer.js",
+    "start": "nodemon apiServer.js",
     "start-debug": "set DEBUG=*,-express:router*,-express:application & node-debug --no-preload --debug-brk true --save-live-edit %appdata%\\npm\\node_modules\\gulp\\bin\\gulp.js develop",
     "start-debug2": "node-inspector & nodemon --debug apiServer.js localhost 5000",
     "test": "mocha",
