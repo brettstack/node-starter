@@ -1,0 +1,10 @@
+branch-defaults:
+  master:
+    environment: rpg-api-development
+global:
+  application_name: RPG API
+  default_ec2_keyname: null
+  default_platform: 64bit Amazon Linux 2014.09 v1.1.0 running Node.js
+  default_region: us-east-1
+  profile: null
+  sc: git
