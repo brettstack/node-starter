@@ -3,10 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "set DEBUG=*,-express:router*,-express:application & node-debug --no-preload --debug-brk true --save-live-edit %appdata%\\npm\\node_modules\\gulp\\bin\\gulp.js develop",
-    "start2": "node-inspector & nodemon --debug apiServer.js localhost 5000",
+    "start": "node apiServer.js"
+    "start-debug": "set DEBUG=*,-express:router*,-express:application & node-debug --no-preload --debug-brk true --save-live-edit %appdata%\\npm\\node_modules\\gulp\\bin\\gulp.js develop",
+    "start-debug2": "node-inspector & nodemon --debug apiServer.js localhost 5000",
     "test": "mocha",
     "install-local": "npm install -g mocha & npm install -g node-inspector & npm install"
+  },
+  "engines": {
+    "node": "0.10.31"
   },
   "dependencies": {
     "async": "^0.9.0",
