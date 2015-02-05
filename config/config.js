@@ -13,13 +13,13 @@ var config = {
 
   },
 
-  test: {
+  staging: {
     root: rootPath,
     app: {
       name: 'rpg-server'
     },
     port: process.env.PORT || 5000,
-    db: 'postgres://postgres:postgres@localhost:5432/rpg-server-test'
+    db: 'postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/rpg_staging'
 
   },
 
@@ -29,7 +29,7 @@ var config = {
       name: 'rpg-server'
     },
     port: process.env.PORT || 5000,
-    db: 'postgres://postgres:postgres@localhost:5432/rpg-server-production'
+    db: 'postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/rpg_production'
 
   }
 };
