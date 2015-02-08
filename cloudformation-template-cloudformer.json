@@ -1,0 +1,625 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Created by CloudFormer",
+  "Resources": {
+    "vpc9414d0f1": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "172.31.0.0/16",
+        "InstanceTenancy": "default",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true"
+      }
+    },
+    "subnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "172.31.16.0/20",
+        "AvailabilityZone": "us-west-1b",
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        }
+      }
+    },
+    "subnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "172.31.0.0/20",
+        "AvailabilityZone": "us-west-1a",
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        }
+      }
+    },
+    "igw0f9d776a": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+      }
+    },
+    "dopt7fb3ac1d": {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainName": "us-west-1.compute.internal",
+        "DomainNameServers": [
+          "AmazonProvidedDNS"
+        ]
+      }
+    },
+    "acl911edff4": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        }
+      }
+    },
+    "rtb07519162": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        }
+      }
+    },
+    "LoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [
+          {
+            "Ref": "subnet2"
+          }
+        ],
+        "HealthCheck": {
+          "HealthyThreshold": "3",
+          "Interval": "30",
+          "Target": "TCP:80",
+          "Timeout": "5",
+          "UnhealthyThreshold": "5"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "LoadBalancerSecurityGroup"
+          }
+        ],
+        "Listeners": [
+          {
+            "InstancePort": "80",
+            "LoadBalancerPort": "80",
+            "Protocol": "HTTP",
+            "InstanceProtocol": "HTTP"
+          }
+        ]
+      }
+    },
+    "CloudFront": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Aliases": [
+            "webbysolutions9.com.au",
+            "www.webbysolutions9.com.au"
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "S3-rpg-staging-com",
+            "ViewerProtocolPolicy": "allow-all",
+            "MinTTL": 0,
+            "ForwardedValues": {
+              "QueryString": true
+            }
+          },
+          "Origins": [
+            {
+              "DomainName": "rpg-staging-com.s3.amazonaws.com",
+              "Id": "S3-rpg-staging-com",
+              "S3OriginConfig": {
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "us-west-1a"
+        ],
+        "Cooldown": "360",
+        "DesiredCapacity": "1",
+        "MaxSize": "4",
+        "MinSize": "1",
+        "HealthCheckGracePeriod": "0",
+        "HealthCheckType": "EC2",
+        "VPCZoneIdentifier": [
+          "subnet2"
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "AutoScalingLaunchConfiguration"
+        },
+        "LoadBalancerNames": [
+          {
+            "Ref": "LoadBalancer"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "staging",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "elasticbeanstalk:environment-id",
+            "Value": "e-7pbdis2fv3",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "elasticbeanstalk:environment-name",
+            "Value": "staging",
+            "PropagateAtLaunch": true
+          }
+        ]
+      }
+    },
+    "rdsrpgstaging": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "AutoMinorVersionUpgrade": "true",
+        "DBInstanceClass": "db.t2.micro",
+        "Port": "5432",
+        "AllocatedStorage": "5",
+        "BackupRetentionPeriod": "7",
+        "DBName": "MyDatabase",
+        "Engine": "postgres",
+        "EngineVersion": "9.3.5",
+        "LicenseModel": "postgresql-license",
+        "MasterUsername": "postgres",
+        "MasterUserPassword": "MyPassword",
+        "PreferredBackupWindow": "13:08-13:38",
+        "PreferredMaintenanceWindow": "sun:09:20-sun:09:50",
+        "VPCSecurityGroups": [
+          {
+            "Ref": "sgRDS"
+          },
+          {
+            "Ref": "sgdefault"
+          }
+        ],
+        "DBSubnetGroupName": {
+          "Ref": "dbsubnetdefault"
+        },
+        "Tags": [
+          {
+            "Key": "workload-type",
+            "Value": "other"
+          }
+        ]
+      }
+    },
+    "s3elasticbeanstalkuswest1347971939225": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+      }
+    },
+    "s3rpgapi": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+      }
+    },
+    "AutoScalingLaunchConfiguration": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": "ami-569e8713",
+        "InstanceType": "t2.micro",
+        "IamInstanceProfile": "aws-elasticbeanstalk-ec2-role",
+        "SecurityGroups": [
+          {
+            "Ref": "sgdefault"
+          }
+        ]
+      }
+    },
+    "dbsubnetdefault": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "default",
+        "SubnetIds": [
+          {
+            "Ref": "subnet1"
+          },
+          {
+            "Ref": "subnet2"
+          }
+        ]
+      }
+    },
+    "sgdefault": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "default VPC security group",
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        },
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "sgRDS": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "default RDS security group",
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "5432",
+            "ToPort": "5432",
+            "CidrIp": "71.231.229.38/32"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "LoadBalancerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Load Balancer Security Group",
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "s3policyelasticbeanstalkuswest1347971939225": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "s3elasticbeanstalkuswest1347971939225"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:DeleteBucket"
+              ],
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": [
+                  "*"
+                ]
+              },
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "s3elasticbeanstalkuswest1347971939225"
+                      },
+                      ""
+                    ]
+                  ]
+                }
+              ],
+              "Sid": "eb-58950a8c-feb6-11e2-89e0-0800277d041b"
+            },
+            {
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  "arn:aws:iam::347971939225:role/aws-elasticbeanstalk-ec2-role"
+                ]
+              },
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "s3elasticbeanstalkuswest1347971939225"
+                      },
+                      "/resources/environments/logs/*"
+                    ]
+                  ]
+                }
+              ],
+              "Sid": "eb-ad78f54a-f239-4c90-adda-49e5f56cb51e"
+            },
+            {
+              "Action": [
+                "s3:ListBucketVersions",
+                "s3:GetObjectVersion",
+                "s3:ListBucket",
+                "s3:GetObject"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  "arn:aws:iam::347971939225:role/aws-elasticbeanstalk-ec2-role"
+                ]
+              },
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "s3elasticbeanstalkuswest1347971939225"
+                      },
+                      ""
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "s3elasticbeanstalkuswest1347971939225"
+                      },
+                      "/resources/environments/*"
+                    ]
+                  ]
+                }
+              ],
+              "Sid": "eb-af163bf3-d27b-4712-b795-d1e33e331ca4"
+            }
+          ]
+        }
+      }
+    },
+    "AutoScalingScaleDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "ScalingAdjustment": "-1",
+        "AutoScalingGroupName": {
+          "Ref": "AutoScalingGroup"
+        }
+      }
+    },
+    "AutoScalingScaleUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "ScalingAdjustment": "1",
+        "AutoScalingGroupName": {
+          "Ref": "AutoScalingGroup"
+        }
+      }
+    },
+    "CloudwatchAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ActionsEnabled": "true",
+        "AlarmDescription": "ElasticBeanstalk Default Scale Up alarm",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": "1",
+        "MetricName": "NetworkOut",
+        "Namespace": "AWS/EC2",
+        "Period": "300",
+        "Statistic": "Average",
+        "Threshold": "6000000.0",
+        "AlarmActions": [
+          {
+            "Ref": "AutoScalingScaleUpPolicy"
+          }
+        ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": "awseb-e-7pbdis2fv3-stack-AWSEBAutoScalingGroup-YIDWWMLA8FDX"
+          }
+        ]
+      }
+    },
+    "CloudwatchAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ActionsEnabled": "true",
+        "AlarmDescription": "ElasticBeanstalk Default Scale Down alarm",
+        "ComparisonOperator": "LessThanThreshold",
+        "EvaluationPeriods": "1",
+        "MetricName": "NetworkOut",
+        "Namespace": "AWS/EC2",
+        "Period": "300",
+        "Statistic": "Average",
+        "Threshold": "2000000.0",
+        "AlarmActions": [
+          {
+            "Ref": "AutoScalingScaleDownPolicy"
+          }
+        ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": "awseb-e-7pbdis2fv3-stack-AWSEBAutoScalingGroup-YIDWWMLA8FDX"
+          }
+        ]
+      }
+    },
+    "acl1": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Egress": true,
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acl911edff4"
+        }
+      }
+    },
+    "acl2": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acl911edff4"
+        }
+      }
+    },
+    "subnetacl1": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acl911edff4"
+        },
+        "SubnetId": {
+          "Ref": "subnet1"
+        }
+      }
+    },
+    "subnetacl2": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acl911edff4"
+        },
+        "SubnetId": {
+          "Ref": "subnet2"
+        }
+      }
+    },
+    "gw1": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        },
+        "InternetGatewayId": {
+          "Ref": "igw0f9d776a"
+        }
+      }
+    },
+    "route1": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "rtb07519162"
+        },
+        "GatewayId": {
+          "Ref": "igw0f9d776a"
+        }
+      },
+      "DependsOn": "gw1"
+    },
+    "dchpassoc1": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpc9414d0f1"
+        },
+        "DhcpOptionsId": {
+          "Ref": "dopt7fb3ac1d"
+        }
+      }
+    },
+    "ingress1": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId": {
+          "Ref": "sgdefault"
+        }
+      }
+    },
+    "ingress2": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgRDS"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "5432",
+        "ToPort": "5432",
+        "CidrIp": "71.231.229.38/32"
+      }
+    },
+    "ingress3": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "LoadBalancerSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress1": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress2": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgRDS"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress3": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "LoadBalancerSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "CidrIp": "0.0.0.0/0"
+      }
+    }
+  }
+}

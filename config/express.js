@@ -7,7 +7,7 @@ var bodyParser = require('body-parser');
 var compression = require('compression');
 var methodOverride = require('method-override');
 var cors = require('cors');
-var isAuthenticated = require ('../app/utils/isAuthenticated');
+var isAuthenticated = require('../app/utils/isAuthenticated');
 // var passport = require('passport');
 // var passportConfig = require('./passport');
 // var FacebookStrategy = require('passport-facebook').Strategy;
@@ -27,7 +27,13 @@ module.exports = function(app, config) {
   app.use(expressValidator());
   app.use(methodOverride());
   app.use(cors({
-    origin: 'http://localhost:4000',
+    origin: true,
+    // origin: function(origin, callback) {
+    //   var whitelist = ['http://localhost:4000'];
+    //   var originIsWhitelisted = whitelist.indexOf(origin) !== -1;
+    //
+    //   callback(null, originIsWhitelisted);
+    // },
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
@@ -37,17 +43,17 @@ module.exports = function(app, config) {
   // app.all(isAuthenticated);
 
   // Initialise controllers
-  globby.sync([config.root + '/app/controllers/*.js', '!' + config.root + '/app/controllers/*.spec.js']).forEach(function (file) {
-      require(file)(app);
+  globby.sync([config.root + '/app/controllers/*.js', '!' + config.root + '/app/controllers/*.spec.js']).forEach(function(file) {
+    require(file)(app);
   });
 
-  app.use(function (req, res, next) {
+  app.use(function(req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
     next(err);
   });
 
-  app.use(function (err, req, res, next) {
+  app.use(function(err, req, res, next) {
     res.status(err.status || 500).json({
       message: err.message,
       error: app.get('env') === 'development' ? err : {}

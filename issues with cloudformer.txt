@@ -1,0 +1,4 @@
+CidrIP instead of CidrIp in SecurityGroupEgress
+us-west-1x not available as subnet
+Missing "ForwardedValues" property in AWS::CloudFront::Distribution.Properties.DistributonConfig.DefaultCacheBehavior
+AWS::EC2::SecurityGroupIngress SourceSecurityGroupOwnerId: Groups belonging to other users may not be granted permissions to VPC security groups.
