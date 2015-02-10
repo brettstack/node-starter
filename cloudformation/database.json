@@ -1,0 +1,278 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "Database",
+
+  "Parameters": {
+    "SSHLocation": {
+      "Description": "Lockdown SSH access to the bastion host (default can be accessed from anywhere)",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x."
+    },
+
+    "DBName": {
+      "Description": "The database name",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9_]*",
+      "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    },
+
+    "DBUser": {
+      "NoEcho": "true",
+      "Description": "The database admin account username",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "16",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    },
+
+    "DBPassword": {
+      "NoEcho": "true",
+      "Description": "The database admin account password",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "41",
+      "AllowedPattern": "[a-zA-Z0-9]+",
+      "ConstraintDescription": "must contain only alphanumeric characters."
+    },
+
+    "DBAllocatedStorage": {
+      "Default": "5",
+      "Description": "The size of the database (Gb)",
+      "Type": "Number",
+      "MinValue": "5",
+      "MaxValue": "1024",
+      "ConstraintDescription": "must be between 5 and 1024Gb."
+    },
+
+    "DBInstanceClass": {
+      "Description": "The database instance type",
+      "Type": "String",
+      "Default": "db.t2.micro",
+      "AllowedValues": ["db.t1.micro", "db.t2.micro", "db.t2.small", "db.t2.medium", "db.m1.small", "db.m1.medium", "db.m1.large", "db.m1.xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge", "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.cr1.8xlarge"],
+      "ConstraintDescription": "must select a valid database instance type."
+    },
+
+    "MultiAZ": {
+      "Description": "Multi-AZ master database",
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": ["true", "false"],
+      "ConstraintDescription": "must be true or false."
+    }
+  },
+
+  "Mappings": {
+    "SubnetConfig": {
+      "DB1": {
+        "CIDR": "10.0.1.0/24"
+      },
+      "DB2": {
+        "CIDR": "10.0.2.0/24"
+      }
+    },
+    "Region2S3WebsiteSuffix": {
+      "us-east-1": {
+        "Suffix": ".s3-website-us-east-1.amazonaws.com"
+      },
+      "us-west-1": {
+        "Suffix": ".s3-website-us-west-1.amazonaws.com"
+      },
+      "us-west-2": {
+        "Suffix": ".s3-website-us-west-2.amazonaws.com"
+      },
+      "eu-west-1": {
+        "Suffix": ".s3-website-eu-west-1.amazonaws.com"
+      },
+      "ap-northeast-1": {
+        "Suffix": ".s3-website-ap-northeast-1.amazonaws.com"
+      },
+      "ap-southeast-1": {
+        "Suffix": ".s3-website-ap-southeast-1.amazonaws.com"
+      },
+      "ap-southeast-2": {
+        "Suffix": ".s3-website-ap-southeast-2.amazonaws.com"
+      },
+      "sa-east-1": {
+        "Suffix": ".s3-website-sa-east-1.amazonaws.com"
+      },
+      "cn-north-1": {
+        "Suffix": ".s3-website.cn-north-1.amazonaws.com.cn"
+      },
+      "eu-central-1": {
+        "Suffix": ".s3-website-eu-central-1.amazonaws.com"
+      }
+    },
+
+  },
+
+  "Resources": {
+    "DBSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": ["SubnetConfig", "DB1", "CIDR"]
+        },
+        "AvailabilityZone": "us-west-2b",
+        "Tags": [{
+          "Key": "Application",
+          "Value": {
+            "Ref": "AWS::StackId"
+          }
+        }]
+      }
+    },
+
+    "DBSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": ["SubnetConfig", "DB2", "CIDR"]
+        },
+        "AvailabilityZone": "us-west-2c",
+        "Tags": [{
+          "Key": "Application",
+          "Value": {
+            "Ref": "AWS::StackId"
+          }
+        }]
+      }
+    },
+
+    "DBSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "default",
+        "SubnetIds": [{
+          "Ref": "DBSubnet1"
+        }, {
+          "Ref": "DBSubnet2"
+        }]
+      }
+    },
+
+    "DBEC2SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Open database for access",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [{
+          "IpProtocol": "tcp",
+          "FromPort": "3306",
+          "ToPort": "3306",
+          "SourceSecurityGroupId": {
+            "Ref": "WebServerSecurityGroup"
+          }
+        }, {
+          "IpProtocol": "tcp",
+          "FromPort": "5432",
+          "ToPort": "5432",
+          "CidrIp": {
+            "Ref": "SSHLocation"
+          }
+        }]
+      }
+    },
+
+    "MasterDB": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "DBName": {
+          "Ref": "DBName"
+        },
+        "AllocatedStorage": {
+          "Ref": "DBAllocatedStorage"
+        },
+        "DBInstanceClass": {
+          "Ref": "DBInstanceClass"
+        },
+        "Engine": "postgres",
+        "MasterUsername": {
+          "Ref": "DBUser"
+        },
+        "MasterUserPassword": {
+          "Ref": "DBPassword"
+        },
+        "MultiAZ": {
+          "Ref": "MultiAZ"
+        },
+        "DBSubnetGroupName": {
+          "Ref": "DBSubnetGroup"
+        },
+        "VPCSecurityGroups": [{
+          "Fn::GetAtt": ["DBEC2SecurityGroup", "GroupId"]
+        }],
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Master Database"
+        }]
+      },
+      "DeletionPolicy": "Snapshot"
+    },
+
+    "ReplicaDB": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "SourceDBInstanceIdentifier": {
+          "Ref": "MasterDB"
+        },
+        "DBInstanceClass": {
+          "Ref": "DBInstanceClass"
+        },
+        "Tags": [{
+          "Key": "Name",
+          "Value": "Read Replica Database"
+        }]
+      }
+    }
+  },
+
+  "Outputs": {
+    "MasterJDBCConnectionString": {
+      "Description": "JDBC connection string for the master database",
+      "Value": {
+        "Fn::Join": ["", ["jdbc:postgres://", {
+            "Fn::GetAtt": ["MasterDB", "Endpoint.Address"]
+          },
+          ":", {
+            "Fn::GetAtt": ["MasterDB", "Endpoint.Port"]
+          },
+          "/", {
+            "Ref": "DBName"
+          }
+        ]]
+      }
+    },
+
+    "ReplicaJDBCConnectionString": {
+      "Description": "JDBC connection string for the replica database",
+      "Value": {
+        "Fn::Join": ["", ["jdbc:postgres://", {
+            "Fn::GetAtt": ["ReplicaDB", "Endpoint.Address"]
+          },
+          ":", {
+            "Fn::GetAtt": ["ReplicaDB", "Endpoint.Port"]
+          },
+          "/", {
+            "Ref": "DBName"
+          }
+        ]]
+      }
+    }
+  }
+}

@@ -12,6 +12,13 @@
       "ConstraintDescription": "must be a valid email address."
     },
 
+    "HostedZone": {
+      "Type": "String",
+      "Description": "The DNS name of an existing Amazon Route 53 hosted zone",
+      "AllowedPattern": "(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)",
+      "ConstraintDescription": "must be a valid DNS zone name."
+    },
+
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
       "Type": "AWS::EC2::KeyPair::KeyName",
@@ -31,7 +38,7 @@
     "WebServerInstanceType": {
       "Description": "WebServer Server EC2 instance type",
       "Type": "String",
-      "Default": "m1.small",
+      "Default": "t2.micro",
       "AllowedValues": ["t1.micro", "t2.micro", "t2.small", "t2.medium", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "g2.2xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
       "ConstraintDescription": "must be a valid EC2 instance type."
     },
@@ -43,12 +50,11 @@
     },
 
     "DBName": {
-      "Default": "MyDatabase",
       "Description": "The database name",
       "Type": "String",
       "MinLength": "1",
       "MaxLength": "64",
-      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9_]*",
       "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
     },
 
@@ -89,14 +95,6 @@
       "ConstraintDescription": "must select a valid database instance type."
     },
 
-    "EC2SecurityGroup": {
-      "Description": "The EC2 security group that contains instances that need access to the database",
-      "Default": "default",
-      "Type": "String",
-      "AllowedPattern": "[a-zA-Z0-9\\-]+",
-      "ConstraintDescription": "must be a valid security group name."
-    },
-
     "MultiAZ": {
       "Description": "Multi-AZ master database",
       "Type": "String",
@@ -113,6 +111,12 @@
       },
       "Public": {
         "CIDR": "10.0.0.0/24"
+      },
+      "DB1": {
+        "CIDR": "10.0.1.0/24"
+      },
+      "DB2": {
+        "CIDR": "10.0.2.0/24"
       }
     },
     "AWSInstanceType2Arch": {
@@ -276,6 +280,82 @@
         "PV64": "ami-a03503bd",
         "HVM64": "ami-b43503a9",
         "HVMG2": "ami-b03503ad"
+      }
+    },
+
+    "Region2Principal": {
+      "us-east-1": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "us-west-2": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "us-west-1": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "eu-west-1": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "ap-southeast-1": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "ap-northeast-1": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "ap-southeast-2": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "sa-east-1": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      },
+      "cn-north-1": {
+        "EC2Principal": "ec2.amazonaws.com.cn",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com.cn"
+      },
+      "eu-central-1": {
+        "EC2Principal": "ec2.amazonaws.com",
+        "OpsWorksPrincipal": "opsworks.amazonaws.com"
+      }
+    },
+
+    "Region2S3WebsiteSuffix": {
+      "us-east-1": {
+        "Suffix": ".s3-website-us-east-1.amazonaws.com"
+      },
+      "us-west-1": {
+        "Suffix": ".s3-website-us-west-1.amazonaws.com"
+      },
+      "us-west-2": {
+        "Suffix": ".s3-website-us-west-2.amazonaws.com"
+      },
+      "eu-west-1": {
+        "Suffix": ".s3-website-eu-west-1.amazonaws.com"
+      },
+      "ap-northeast-1": {
+        "Suffix": ".s3-website-ap-northeast-1.amazonaws.com"
+      },
+      "ap-southeast-1": {
+        "Suffix": ".s3-website-ap-southeast-1.amazonaws.com"
+      },
+      "ap-southeast-2": {
+        "Suffix": ".s3-website-ap-southeast-2.amazonaws.com"
+      },
+      "sa-east-1": {
+        "Suffix": ".s3-website-sa-east-1.amazonaws.com"
+      },
+      "cn-north-1": {
+        "Suffix": ".s3-website.cn-north-1.amazonaws.com.cn"
+      },
+      "eu-central-1": {
+        "Suffix": ".s3-website-eu-central-1.amazonaws.com"
       }
     },
 
@@ -601,6 +681,73 @@
       "DependsOn": "LogsBucketPolicy"
     },
 
+    "FrontEndBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicRead",
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html",
+          "ErrorDocument": "error.html"
+        }
+      },
+      "DeletionPolicy": "Retain"
+    },
+
+    "FrontEndCDN": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Comment": "CDN for S3-backed website",
+          "CustomOrigin": {
+            "DNSName": {
+              "Fn::Join": ["", [{
+                "Ref": "FrontEndBucket"
+              }, {
+                "Fn::FindInMap": ["Region2S3WebsiteSuffix", {
+                  "Ref": "AWS::Region"
+                }, "Suffix"]
+              }]]
+            },
+            "HTTPPort": "80",
+            "HTTPSPort": "443",
+            "OriginProtocolPolicy": "http-only"
+          },
+          "Enabled": "true",
+          "DefaultRootObject": "index.html"
+        }
+      }
+    },
+
+    "FrontEndDNSName": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneName": {
+          "Fn::Join": ["", [{
+            "Ref": "HostedZone"
+          }, "."]]
+        },
+        "Comment": "CNAME redirect custom name to CloudFront distribution",
+        "Name": {
+          "Fn::Join": ["", [{
+            "Ref": "AWS::StackName"
+          }, {
+            "Ref": "AWS::AccountId"
+          }, ".", {
+            "Ref": "AWS::Region"
+          }, ".", {
+            "Ref": "HostedZone"
+          }]]
+        },
+        "Type": "CNAME",
+        "TTL": "900",
+        "ResourceRecords": [{
+          "Fn::Join": ["", ["http://", {
+            "Fn::GetAtt": ["FrontEndCDN", "DomainName"]
+          }]]
+        }]
+      }
+    },
+
     "LogsBucket": {
       "Type": "AWS::S3::Bucket",
       "DeletionPolicy": "Retain"
@@ -677,7 +824,7 @@
       }
     },
 
-    "WebServerFleet": {
+    "WebServerAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "DependsOn": "PublicRoute",
       "Properties": {
@@ -726,9 +873,65 @@
         "AutoScalingRollingUpdate": {
           "MinInstancesInService": "1",
           "MaxBatchSize": "1",
-          "PauseTime": "PT15M",
           "WaitOnResourceSignals": "true"
         }
+      }
+    },
+
+    "LogRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [{
+                "Fn::FindInMap": ["Region2Principal", {
+                  "Ref": "AWS::Region"
+                }, "EC2Principal"]
+              }]
+            },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "Path": "/",
+        "Policies": [{
+          "PolicyName": "LogRolePolicy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": ["logs:*"],
+              "Resource": [{
+                "Fn::Join": ["", [{
+                    "Fn::FindInMap": ["Region2ARNPrefix", {
+                      "Ref": "AWS::Region"
+                    }, "ARNPrefix"]
+                  },
+                  "logs:*:*:*"
+                ]]
+              }]
+            }]
+          }
+        }]
+      }
+    },
+
+    "LogRoleInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [{
+          "Ref": "LogRole"
+        }]
+      }
+    },
+
+    "CloudFormationLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": 7
       }
     },
 
@@ -736,7 +939,61 @@
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata": {
         "AWS::CloudFormation::Init": {
-          "config": {
+          "configSets": {
+            "install_all": ["install_cfn", "install_app", "install_logs"]
+          },
+          "install_cfn": {
+            "files": {
+              "/etc/cfn/cfn-hup.conf": {
+                "content": {
+                  "Fn::Join": ["", [
+                    "[main]\n",
+                    "stack=", {
+                      "Ref": "AWS::StackId"
+                    }, "\n",
+                    "region=", {
+                      "Ref": "AWS::Region"
+                    }, "\n"
+                  ]]
+                },
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                "content": {
+                  "Fn::Join": ["", [
+                    "[cfn-auto-reloader-hook]\n",
+                    "triggers=post.update\n",
+                    "path=Resources.WebServerLaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                    "action=/opt/aws/bin/cfn-init -v ",
+                    "         --stack ", {
+                      "Ref": "AWS::StackName"
+                    },
+                    "         --resource WebServerLaunchConfig ",
+                    "         --configsets install_all ",
+                    "         --region ", {
+                      "Ref": "AWS::Region"
+                    }, "\n",
+                    "runas=root\n"
+                  ]]
+                }
+              }
+            },
+
+            "services": {
+              "sysvinit": {
+                "cfn-hup": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
+                }
+              }
+            }
+          },
+
+          "install_app": {
             "packages": {
               "yum": {
                 "httpd": [],
@@ -807,6 +1064,90 @@
                 }
               }
             }
+          },
+
+          "install_logs": {
+            "packages": {
+              "yum": {
+                "awslogs": []
+              }
+            },
+
+            "files": {
+              "/etc/awslogs/awslogs.conf": {
+                "content": {
+                  "Fn::Join": ["", [
+                    "[general]\n",
+                    "state_file= /var/awslogs/state/agent-state\n",
+
+                    "[/var/log/cloud-init.log]\n",
+                    "file = /var/log/cloud-init.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cloud-init.log\n",
+                    "datetime_format = \n",
+
+                    "[/var/log/cloud-init-output.log]\n",
+                    "file = /var/log/cloud-init-output.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cloud-init-output.log\n",
+                    "datetime_format = \n",
+
+                    "[/var/log/cfn-init.log]\n",
+                    "file = /var/log/cfn-init.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cfn-init.log\n",
+                    "datetime_format = \n",
+
+                    "[/var/log/cfn-hup.log]\n",
+                    "file = /var/log/cfn-hup.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cfn-hup.log\n",
+                    "datetime_format = \n",
+
+                    "[/var/log/cfn-wire.log]\n",
+                    "file = /var/log/cfn-wire.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cfn-wire.log\n",
+                    "datetime_format = \n",
+
+                    "[/var/log/httpd]\n",
+                    "file = /var/log/httpd/*\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/httpd\n",
+                    "datetime_format = %d/%b/%Y:%H:%M:%S\n"
+                  ]]
+                },
+                "mode": "000444",
+                "owner": "root",
+                "group": "root"
+              }
+            },
+            "commands": {
+              "01_create_state_directory": {
+                "command": "mkdir -p /var/awslogs/state"
+              }
+            },
+            "services": {
+              "sysvinit": {
+                "awslogs": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": ["/etc/awslogs/awslogs.conf"]
+                }
+              }
+            }
           }
         }
       },
@@ -851,7 +1192,7 @@
               "    --stack ", {
                 "Ref": "AWS::StackId"
               },
-              "    --resource WebServerFleet ",
+              "    --resource WebServerAutoScalingGroup ",
               "    --region ", {
                 "Ref": "AWS::Region"
               }, "\n"
@@ -866,7 +1207,7 @@
       "Properties": {
         "AdjustmentType": "ChangeInCapacity",
         "AutoScalingGroupName": {
-          "Ref": "WebServerFleet"
+          "Ref": "WebServerAutoScalingGroup"
         },
         "Cooldown": "60",
         "ScalingAdjustment": "1"
@@ -878,7 +1219,7 @@
       "Properties": {
         "AdjustmentType": "ChangeInCapacity",
         "AutoScalingGroupName": {
-          "Ref": "WebServerFleet"
+          "Ref": "WebServerAutoScalingGroup"
         },
         "Cooldown": "60",
         "ScalingAdjustment": "-1"
@@ -901,7 +1242,7 @@
         "Dimensions": [{
           "Name": "AutoScalingGroupName",
           "Value": {
-            "Ref": "WebServerFleet"
+            "Ref": "WebServerAutoScalingGroup"
           }
         }],
         "ComparisonOperator": "GreaterThanThreshold"
@@ -924,7 +1265,7 @@
         "Dimensions": [{
           "Name": "AutoScalingGroupName",
           "Value": {
-            "Ref": "WebServerFleet"
+            "Ref": "WebServerAutoScalingGroup"
           }
         }],
         "ComparisonOperator": "LessThanThreshold"
@@ -955,17 +1296,80 @@
         }]
       }
     },
+    
+    "DBSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": ["SubnetConfig", "DB1", "CIDR"]
+        },
+        "AvailabilityZone": "us-west-2b",
+        "Tags": [{
+          "Key": "Application",
+          "Value": {
+            "Ref": "AWS::StackId"
+          }
+        }]
+      }
+    },
+    
+    "DBSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": ["SubnetConfig", "DB2", "CIDR"]
+        },
+        "AvailabilityZone": "us-west-2c",
+        "Tags": [{
+          "Key": "Application",
+          "Value": {
+            "Ref": "AWS::StackId"
+          }
+        }]
+      }
+    },
 
+    "DBSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "default",
+        "SubnetIds": [
+          {
+            "Ref": "DBSubnet1"
+          },
+          {
+            "Ref": "DBSubnet2"
+          }
+        ]
+      }
+    },
+    
     "DBEC2SecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Open database for access",
+        "VpcId": {
+          "Ref": "VPC"
+        },
         "SecurityGroupIngress": [{
           "IpProtocol": "tcp",
           "FromPort": "3306",
           "ToPort": "3306",
-          "SourceSecurityGroupName": {
-            "Ref": "EC2SecurityGroup"
+          "SourceSecurityGroupId": {
+            "Ref": "WebServerSecurityGroup"
+          }
+        }, {
+          "IpProtocol": "tcp",
+          "FromPort": "5432",
+          "ToPort": "5432",
+          "CidrIp": {
+            "Ref": "SSHLocation"
           }
         }]
       }
@@ -983,7 +1387,7 @@
         "DBInstanceClass": {
           "Ref": "DBInstanceClass"
         },
-        "Engine": "PostgreSQL",
+        "Engine": "postgres",
         "MasterUsername": {
           "Ref": "DBUser"
         },
@@ -993,13 +1397,16 @@
         "MultiAZ": {
           "Ref": "MultiAZ"
         },
+        "DBSubnetGroupName": {
+          "Ref": "DBSubnetGroup"
+        },
+        "VPCSecurityGroups": [{
+          "Fn::GetAtt": ["DBEC2SecurityGroup", "GroupId"]
+        }],
         "Tags": [{
           "Key": "Name",
           "Value": "Master Database"
-        }],
-        "VPCSecurityGroups": {
-          "Fn::GetAtt": ["DBEC2SecurityGroup", "GroupId"]
-        }
+        }]
       },
       "DeletionPolicy": "Snapshot"
     },
@@ -1029,6 +1436,31 @@
           "Fn::GetAtt": ["PublicElasticLoadBalancer", "DNSName"]
         }]]
       }
+    },
+
+    "FrontEndURL": {
+      "Value": {
+        "Fn::Join": ["", ["http://", {
+          "Ref": "FrontEndDNSName"
+        }]]
+      },
+      "Description": "The URL of the newly created website"
+    },
+
+    "FrontEndBucketName": {
+      "Value": {
+        "Ref": "FrontEndBucket"
+      },
+      "Description": "Name of S3 bucket to hold website content"
+    },
+
+    "FrontEndBucketSecureURL": {
+      "Value": {
+        "Fn::Join": ["", ["https://", {
+          "Fn::GetAtt": ["FrontEndBucket", "DomainName"]
+        }]]
+      },
+      "Description": "Secure URL of S3 bucket to hold website content"
     },
 
     "ELBAccessLogsBucket": {
