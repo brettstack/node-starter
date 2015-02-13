@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "Load Balancer",
+  "Description": "Api Server, Load Balancer, Auto Scaling,",
 
   "Parameters": {
     "KeyName": {
@@ -21,7 +21,7 @@
     },
 
     "PublicSubnetAvailabilityZones": {
-      "Description": "PublicSubnet",
+      "Description": "PublicSubnet Availability Zones",
       "Type": "String"
     },
 
@@ -629,7 +629,6 @@
                       "Ref": "AWS::StackName"
                     },
                     "         --resource WebServerLaunchConfig ",
-                    "         --configsets install_all ",
                     "         --region ", {
                       "Ref": "AWS::Region"
                     }, "\n",
@@ -638,171 +637,106 @@
                 }
               }
             },
-
             "services": {
-              "sysvinit": {
-                "cfn-hup": {
-                  "enabled": "true",
-                  "ensureRunning": "true",
-                  "files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
-                }
+              "cfn-hup": {
+                "enabled": "true",
+                "ensureRunning": "true",
+                "files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
               }
             }
           },
-
           "install_app": {
             "packages": {
               "yum": {
-                "httpd": [],
-                "nodejs": []
+                "httpd": []
               }
             },
-
             "files": {
               "/var/www/html/index.html": {
                 "content": {
                   "Fn::Join": ["\n", [
-                    "<img src=\"https://s3.amazonaws.com/cloudformation-examples/cloudformation_graphic.png\" alt=\"AWS CloudFormation Logo\"/>",
                     "<h1>Congratulations, you have successfully launched the AWS CloudFormation sample.</h1>"
                   ]]
                 },
                 "mode": "000644",
                 "owner": "root",
                 "group": "root"
-              },
-              "/etc/cfn/cfn-hup.conf": {
-                "content": {
-                  "Fn::Join": ["", [
-                    "[main]\n",
-                    "stack=", {
-                      "Ref": "AWS::StackId"
-                    }, "\n",
-                    "region=", {
-                      "Ref": "AWS::Region"
-                    }, "\n"
-                  ]]
-                },
-                "mode": "000400",
-                "owner": "root",
-                "group": "root"
-              },
-
-              "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
-                "content": {
-                  "Fn::Join": ["", [
-                    "[cfn-auto-reloader-hook]\n",
-                    "triggers=post.update\n",
-                    "path=Resources.WebServerLaunchConfig.Metadata.AWS::CloudFormation::Init\n",
-                    "action=/opt/aws/bin/cfn-init -v ",
-                    "         --stack ", {
-                      "Ref": "AWS::StackName"
-                    },
-                    "         --resource WebServerLaunchConfig ",
-                    "         --region ", {
-                      "Ref": "AWS::Region"
-                    }, "\n",
-                    "runas=root\n"
-                  ]]
-                }
               }
             },
-
             "services": {
               "sysvinit": {
                 "httpd": {
                   "enabled": "true",
                   "ensureRunning": "true",
                   "files": ["/etc/httpd/conf.d/aptobackend.conf", "/var/www/html/index.html"]
-                },
-                "cfn-hup": {
-                  "enabled": "true",
-                  "ensureRunning": "true",
-                  "files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
                 }
               }
             }
           },
 
           "install_logs": {
-            "packages": {
-              "yum": {
-                "awslogs": []
+            "packages" : {
+              "yum" : {
+                "awslogs" : []
               }
             },
 
             "files": {
               "/etc/awslogs/awslogs.conf": {
-                "content": {
-                  "Fn::Join": ["", [
-                    "[general]\n",
-                    "state_file= /var/awslogs/state/agent-state\n",
+                "content": { "Fn::Join": [ "", [
+                  "[general]\n",
+                  "state_file= /var/awslogs/state/agent-state\n",
 
-                    "[/var/log/cloud-init.log]\n",
-                    "file = /var/log/cloud-init.log\n",
-                    "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
-                    }, "\n",
-                    "log_stream_name = {instance_id}/cloud-init.log\n",
-                    "datetime_format = \n",
+                  "[/var/log/cloud-init.log]\n",
+                  "file = /var/log/cloud-init.log\n",
+                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
+                  "log_stream_name = {instance_id}/cloud-init.log\n",
+                  "datetime_format = \n",
 
-                    "[/var/log/cloud-init-output.log]\n",
-                    "file = /var/log/cloud-init-output.log\n",
-                    "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
-                    }, "\n",
-                    "log_stream_name = {instance_id}/cloud-init-output.log\n",
-                    "datetime_format = \n",
+                  "[/var/log/cloud-init-output.log]\n",
+                  "file = /var/log/cloud-init-output.log\n",
+                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
+                  "log_stream_name = {instance_id}/cloud-init-output.log\n",
+                  "datetime_format = \n",
 
-                    "[/var/log/cfn-init.log]\n",
-                    "file = /var/log/cfn-init.log\n",
-                    "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
-                    }, "\n",
-                    "log_stream_name = {instance_id}/cfn-init.log\n",
-                    "datetime_format = \n",
+                  "[/var/log/cfn-init.log]\n",
+                  "file = /var/log/cfn-init.log\n",
+                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
+                  "log_stream_name = {instance_id}/cfn-init.log\n",
+                  "datetime_format = \n",
 
-                    "[/var/log/cfn-hup.log]\n",
-                    "file = /var/log/cfn-hup.log\n",
-                    "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
-                    }, "\n",
-                    "log_stream_name = {instance_id}/cfn-hup.log\n",
-                    "datetime_format = \n",
+                  "[/var/log/cfn-hup.log]\n",
+                  "file = /var/log/cfn-hup.log\n",
+                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
+                  "log_stream_name = {instance_id}/cfn-hup.log\n",
+                  "datetime_format = \n",
 
-                    "[/var/log/cfn-wire.log]\n",
-                    "file = /var/log/cfn-wire.log\n",
-                    "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
-                    }, "\n",
-                    "log_stream_name = {instance_id}/cfn-wire.log\n",
-                    "datetime_format = \n",
+                  "[/var/log/cfn-wire.log]\n",
+                  "file = /var/log/cfn-wire.log\n",
+                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
+                  "log_stream_name = {instance_id}/cfn-wire.log\n",
+                  "datetime_format = \n",
 
-                    "[/var/log/httpd]\n",
-                    "file = /var/log/httpd/*\n",
-                    "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
-                    }, "\n",
-                    "log_stream_name = {instance_id}/httpd\n",
-                    "datetime_format = %d/%b/%Y:%H:%M:%S\n"
-                  ]]
-                },
+                  "[/var/log/httpd]\n",
+                  "file = /var/log/httpd/*\n",
+                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
+                  "log_stream_name = {instance_id}/httpd\n",
+                  "datetime_format = %d/%b/%Y:%H:%M:%S\n"
+                ] ] },
                 "mode": "000444",
                 "owner": "root",
                 "group": "root"
               }
             },
-            "commands": {
-              "01_create_state_directory": {
-                "command": "mkdir -p /var/awslogs/state"
+            "commands" : {
+              "01_create_state_directory" : {
+                "command" : "mkdir -p /var/awslogs/state"
               }
             },
-            "services": {
-              "sysvinit": {
-                "awslogs": {
-                  "enabled": "true",
-                  "ensureRunning": "true",
-                  "files": ["/etc/awslogs/awslogs.conf"]
-                }
+            "services" : {
+              "sysvinit" : {
+                "awslogs"    : { "enabled" : "true", "ensureRunning" : "true",
+                                 "files" : [ "/etc/awslogs/awslogs.conf" ] }
               }
             }
           }
@@ -817,6 +751,9 @@
               "Ref": "WebServerInstanceType"
             }, "Arch"]
           }]
+        },
+        "IamInstanceProfile": {
+          "Ref": "LogRoleInstanceProfile"
         },
         "SecurityGroups": [{
           "Ref": "WebServerSecurityGroup"
@@ -840,11 +777,12 @@
                 "Ref": "AWS::StackId"
               },
               "    --resource WebServerLaunchConfig ",
+              "    --configsets install_all ",
               "    --region ", {
                 "Ref": "AWS::Region"
               }, "\n",
 
-              "# Signal copletion\n",
+              "# Signal completion\n",
               "/opt/aws/bin/cfn-signal -e $? ",
               "    --stack ", {
                 "Ref": "AWS::StackId"
@@ -944,6 +882,13 @@
       "Description": "DNS name of the S3 bucket storing ELB Access Logs",
       "Value": {
         "Fn::GetAtt": ["LogsBucket", "DomainName"]
+      }
+    },
+
+    "WebServerSecurityGroup": {
+      "Description": "Web Server Security Group",
+      "Value": {
+        "Ref": "WebServerSecurityGroup"
       }
     }
   }

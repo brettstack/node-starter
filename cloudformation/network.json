@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "VPC",
+  "Description": "VPC, Public Subnet, Internet Gateway",
 
   "Parameters": {
     "KeyName": {
@@ -30,7 +30,7 @@
       "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
       "ConstraintDescription": "must be a valid email address."
     },
-    
+
     "SSHLocation": {
       "Description": "Lockdown SSH access to the bastion host (default can be accessed from anywhere)",
       "Type": "String",
@@ -41,7 +41,7 @@
       "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x."
     }
   },
-  
+
   "Mappings": {
     "SubnetConfig": {
       "VPC": {
@@ -52,43 +52,8 @@
       }
     }
   },
-  
-  "Resources": {
-    "LoadBalancerStack": {
-      "Type": "AWS::CloudFormation::Stack",
-      "DependsOn": "PublicRoute",
-      "Properties": {
-        "TemplateURL": "https://s3-us-west-2.amazonaws.com/cf-templates-6rktydqe3yn-us-west-2/api-server.json",
-        "TimeoutInMinutes": "60",
-        "Parameters": {
-          "VPC": {
-            "Ref": "VPC"
-          },
-          "PublicSubnet": {
-            "Ref": "PublicSubnet"
-          },
-          "PublicSubnetAvailabilityZones": {
-            "Fn::GetAtt": ["PublicSubnet", "AvailabilityZone"]
-          },
-          "KeyName": {
-            "Ref": "KeyName"
-          },
-          "WebServerInstanceType": {
-            "Ref": "WebServerInstanceType"
-          },
-          "WebServerCount": {
-            "Ref": "WebServerCount"
-          },
-          "OperatorEmail": {
-            "Ref": "OperatorEmail"
-          },
-          "SSHLocation": {
-            "Ref": "SSHLocation"
-          }
-        }
-      }
-    },
 
+  "Resources": {
     "VPC": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
@@ -302,6 +267,29 @@
         "NetworkAclId": {
           "Ref": "PublicNetworkAcl"
         }
+      }
+    }
+  },
+  
+  "Outputs": {
+    "VPC": {
+      "Description": "VPC",
+      "Value": {
+        "Ref": "VPC"
+      }
+    },
+    
+      "PublicSubnet": {
+        "Description": "Public Subnet",
+        "Value": {
+          "Ref": "PublicSubnet"
+        }
+      },
+
+    "PublicSubnetAvailabilityZones": {
+      "Description": "Public Subnet Availability Zones",
+      "Value": {
+        "Fn::GetAtt": ["PublicSubnet", "AvailabilityZone"]
       }
     }
   }

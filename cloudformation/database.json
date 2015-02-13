@@ -1,9 +1,19 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "Database",
+  "Description": "Database with Read Replica",
 
   "Parameters": {
+    "VPC": {
+      "Description": "VPC",
+      "Type": "String"
+    },
+
+    "WebServerSecurityGroup": {
+      "Description": "Web Server Security Group",
+      "Type": "String"
+    },
+
     "SSHLocation": {
       "Description": "Lockdown SSH access to the bastion host (default can be accessed from anywhere)",
       "Type": "String",
@@ -60,7 +70,7 @@
       "ConstraintDescription": "must select a valid database instance type."
     },
 
-    "MultiAZ": {
+    "DBMultiAZ": {
       "Description": "Multi-AZ master database",
       "Type": "String",
       "Default": "false",
@@ -109,8 +119,7 @@
       "eu-central-1": {
         "Suffix": ".s3-website-eu-central-1.amazonaws.com"
       }
-    },
-
+    }
   },
 
   "Resources": {
@@ -173,8 +182,8 @@
         },
         "SecurityGroupIngress": [{
           "IpProtocol": "tcp",
-          "FromPort": "3306",
-          "ToPort": "3306",
+          "FromPort": "5432",
+          "ToPort": "5432",
           "SourceSecurityGroupId": {
             "Ref": "WebServerSecurityGroup"
           }
@@ -209,7 +218,7 @@
           "Ref": "DBPassword"
         },
         "MultiAZ": {
-          "Ref": "MultiAZ"
+          "Ref": "DBMultiAZ"
         },
         "DBSubnetGroupName": {
           "Ref": "DBSubnetGroup"

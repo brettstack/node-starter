@@ -1,29 +1,40 @@
-
-"UpdatePolicy": {
-  "AutoScalingRollingUpdate": {
-    "MinInstancesInService": "1",
-    "MaxBatchSize": "1",
-    "PauseTime": "PT15M",
-    "WaitOnResourceSignals": "true"
+"FrontEndDNSName": {
+  "Type": "AWS::Route53::RecordSet",
+  "Properties": {
+    "HostedZoneName": {
+      "Fn::Join": ["", [{
+        "Ref": "HostedZone"
+      }, "."]]
+    },
+    "Comment": "CNAME redirect custom name to CloudFront distribution",
+    "Name": {
+      "Fn::Join": ["", [{
+        "Ref": "AWS::StackName"
+      }, {
+        "Ref": "AWS::AccountId"
+      }, ".", {
+        "Ref": "AWS::Region"
+      }, ".", {
+        "Ref": "HostedZone"
+      }]]
+    },
+    "Type": "CNAME",
+    "TTL": "900",
+    "ResourceRecords": [{
+      "Fn::Join": ["", ["http://", {
+        "Fn::GetAtt": ["FrontEndCDN", "DomainName"]
+      }]]
+    }]
   }
 }
 
-
-"FrontEndCDN" : {
-  "Type" : "AWS::CloudFront::Distribution",
-  "Properties" : {
-     "DistributionConfig" : {
-       "Comment" : "CDN for S3-backed website",
-       "CustomOrigin" : {
-         "DNSName": { "Fn::Join" : ["", [{"Ref" : "FrontEndBucket"},
-                                       {"Fn::FindInMap" : [ "Region2S3WebsiteSuffix", {"Ref" : "AWS::Region"}, "Suffix" ]}]]},
-         "HTTPPort" : "80",
-         "HTTPSPort" : "443",
-         "OriginProtocolPolicy" : "http-only"
-       },
-       "Enabled" : "true",
-       "DefaultRootObject" : "index.html",
-       "CNAMEs" : [{ "Fn::Join" : [ "", [{"Ref" : "AWS::StackName"}, {"Ref" : "AWS::AccountId"}, ".", {"Ref" : "AWS::Region"}, ".", { "Ref" : "HostedZone" }]]}]
-     }
+"Outputs": {
+  "FrontEndURL": {
+    "Value": {
+      "Fn::Join": ["", ["http://", {
+        "Ref": "FrontEndDNSName"
+      }]]
+    },
+    "Description": "The URL of the newly created website"
   }
-},
+}
