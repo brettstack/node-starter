@@ -201,6 +201,7 @@
     "MasterDB": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
+        "PubliclyAccessible": "true",
         "DBName": {
           "Ref": "DBName"
         },
