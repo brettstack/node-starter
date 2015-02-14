@@ -535,7 +535,7 @@
       }
     },
 
-    "LogRole": {
+    "ApiServerRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -554,33 +554,40 @@
         },
         "Path": "/",
         "Policies": [{
-          "PolicyName": "LogRolePolicy",
+          "PolicyName": "ApiServerRolePolicy",
           "PolicyDocument": {
             "Version": "2012-10-17",
             "Statement": [{
               "Effect": "Allow",
-              "Action": ["logs:*"],
-              "Resource": [{
-                "Fn::Join": ["", [{
-                    "Fn::FindInMap": ["Region2ARNPrefix", {
-                      "Ref": "AWS::Region"
-                    }, "ARNPrefix"]
-                  },
-                  "logs:*:*:*"
-                ]]
-              }]
+              "Action": [
+                "logs:*",
+                "cloudformation:*",
+                "codedeploy:*",
+                "ec2:*",
+                "iam:AddRoleToInstanceProfile",
+                "iam:CreateInstanceProfile",
+                "iam:CreateRole",
+                "iam:DeleteInstanceProfile",
+                "iam:DeleteRole",
+                "iam:DeleteRolePolicy",
+                "iam:GetRole",
+                "iam:PassRole",
+                "iam:PutRolePolicy",
+                "iam:RemoveRoleFromInstanceProfile"
+              ],
+              "Resource": "*"
             }]
           }
         }]
       }
     },
 
-    "LogRoleInstanceProfile": {
+    "ApiServerRoleInstanceProfile": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
         "Path": "/",
         "Roles": [{
-          "Ref": "LogRole"
+          "Ref": "ApiServerRole"
         }]
       }
     },
@@ -648,7 +655,8 @@
           "install_app": {
             "packages": {
               "yum": {
-                "httpd": []
+                "httpd": [],
+                "nodejs": []
               }
             },
             "files": {
@@ -753,7 +761,7 @@
           }]
         },
         "IamInstanceProfile": {
-          "Ref": "LogRoleInstanceProfile"
+          "Ref": "ApiServerRoleInstanceProfile"
         },
         "SecurityGroups": [{
           "Ref": "WebServerSecurityGroup"

@@ -1,5 +1,4 @@
 module.exports = {
-  db: process.env.DB || 'postgres://postgres:postgres@localhost:5432/rpg-server-development',
   TOKEN_SECRET: process.env.TOKEN_SECRET || 'yodawgitsasecret',
   mandrill: {
     user: process.env.MANDRILL_USER || 'brett.j.andrews@gmail.com',
