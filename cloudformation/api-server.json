@@ -10,6 +10,22 @@
       "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
     },
 
+    "TagKey": {
+      "Description": "The EC2 tag key that identifies this as a target for deployments.",
+      "Type": "String",
+      "Default": "Name",
+      "AllowedPattern": "[\\x20-\\x7E]*",
+      "ConstraintDescription": "Can contain only ASCII characters."
+    },
+
+    "TagValue": {
+      "Description": "The EC2 tag value that identifies this as a target for deployments.",
+      "Type": "String",
+      "Default": "RpgStaging",
+      "AllowedPattern": "[\\x20-\\x7E]*",
+      "ConstraintDescription": "Can contain only ASCII characters."
+    },
+
     "VPC": {
       "Description": "VPC",
       "Type": "String"
@@ -436,6 +452,14 @@
           "Key": "Network",
           "Value": "Public",
           "PropagateAtLaunch": "true"
+        }, {
+          "Key": {
+            "Ref": "TagKey"
+          },
+          "Value": {
+            "Ref": "TagValue"
+          },
+          "PropagateAtLaunch": "true"
         }]
       },
       "CreationPolicy": {
@@ -492,7 +516,7 @@
         }]
       }
     },
-
+    
     "LogsBucket": {
       "Type": "AWS::S3::Bucket",
       "DeletionPolicy": "Retain"
@@ -560,6 +584,8 @@
             "Statement": [{
               "Effect": "Allow",
               "Action": [
+                "autoscaling:Describe*",
+                "s3:Get*",
                 "logs:*",
                 "cloudformation:*",
                 "codedeploy:*",
@@ -636,15 +662,22 @@
                       "Ref": "AWS::StackName"
                     },
                     "         --resource WebServerLaunchConfig ",
+                    "         --configsets install_all ",
                     "         --region ", {
                       "Ref": "AWS::Region"
-                    }, "\n",
+                    }, " || error_exit 'Failed to run cfn-init.'\n",
                     "runas=root\n"
                   ]]
                 }
               }
             },
             "services": {
+              "sysvint": {
+                "codedeploy-agent": {
+                  "enabled": "true",
+                  "ensureRunning": "true"
+                }
+              },
               "cfn-hup": {
                 "enabled": "true",
                 "ensureRunning": "true",
@@ -655,8 +688,7 @@
           "install_app": {
             "packages": {
               "yum": {
-                "httpd": [],
-                "nodejs": []
+                "httpd": []
               }
             },
             "files": {
@@ -683,68 +715,85 @@
           },
 
           "install_logs": {
-            "packages" : {
-              "yum" : {
-                "awslogs" : []
+            "packages": {
+              "yum": {
+                "awslogs": []
               }
             },
 
             "files": {
               "/etc/awslogs/awslogs.conf": {
-                "content": { "Fn::Join": [ "", [
-                  "[general]\n",
-                  "state_file= /var/awslogs/state/agent-state\n",
+                "content": {
+                  "Fn::Join": ["", [
+                    "[general]\n",
+                    "state_file= /var/awslogs/state/agent-state\n",
 
-                  "[/var/log/cloud-init.log]\n",
-                  "file = /var/log/cloud-init.log\n",
-                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
-                  "log_stream_name = {instance_id}/cloud-init.log\n",
-                  "datetime_format = \n",
+                    "[/var/log/cloud-init.log]\n",
+                    "file = /var/log/cloud-init.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cloud-init.log\n",
+                    "datetime_format = \n",
 
-                  "[/var/log/cloud-init-output.log]\n",
-                  "file = /var/log/cloud-init-output.log\n",
-                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
-                  "log_stream_name = {instance_id}/cloud-init-output.log\n",
-                  "datetime_format = \n",
+                    "[/var/log/cloud-init-output.log]\n",
+                    "file = /var/log/cloud-init-output.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cloud-init-output.log\n",
+                    "datetime_format = \n",
 
-                  "[/var/log/cfn-init.log]\n",
-                  "file = /var/log/cfn-init.log\n",
-                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
-                  "log_stream_name = {instance_id}/cfn-init.log\n",
-                  "datetime_format = \n",
+                    "[/var/log/cfn-init.log]\n",
+                    "file = /var/log/cfn-init.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cfn-init.log\n",
+                    "datetime_format = \n",
 
-                  "[/var/log/cfn-hup.log]\n",
-                  "file = /var/log/cfn-hup.log\n",
-                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
-                  "log_stream_name = {instance_id}/cfn-hup.log\n",
-                  "datetime_format = \n",
+                    "[/var/log/cfn-hup.log]\n",
+                    "file = /var/log/cfn-hup.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cfn-hup.log\n",
+                    "datetime_format = \n",
 
-                  "[/var/log/cfn-wire.log]\n",
-                  "file = /var/log/cfn-wire.log\n",
-                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
-                  "log_stream_name = {instance_id}/cfn-wire.log\n",
-                  "datetime_format = \n",
+                    "[/var/log/cfn-wire.log]\n",
+                    "file = /var/log/cfn-wire.log\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/cfn-wire.log\n",
+                    "datetime_format = \n",
 
-                  "[/var/log/httpd]\n",
-                  "file = /var/log/httpd/*\n",
-                  "log_group_name = ", { "Ref": "CloudFormationLogs" }, "\n",
-                  "log_stream_name = {instance_id}/httpd\n",
-                  "datetime_format = %d/%b/%Y:%H:%M:%S\n"
-                ] ] },
+                    "[/var/log/httpd]\n",
+                    "file = /var/log/httpd/*\n",
+                    "log_group_name = ", {
+                      "Ref": "CloudFormationLogs"
+                    }, "\n",
+                    "log_stream_name = {instance_id}/httpd\n",
+                    "datetime_format = %d/%b/%Y:%H:%M:%S\n"
+                  ]]
+                },
                 "mode": "000444",
                 "owner": "root",
                 "group": "root"
               }
             },
-            "commands" : {
-              "01_create_state_directory" : {
-                "command" : "mkdir -p /var/awslogs/state"
+            "commands": {
+              "01_create_state_directory": {
+                "command": "mkdir -p /var/awslogs/state"
               }
             },
-            "services" : {
-              "sysvinit" : {
-                "awslogs"    : { "enabled" : "true", "ensureRunning" : "true",
-                                 "files" : [ "/etc/awslogs/awslogs.conf" ] }
+            "services": {
+              "sysvinit": {
+                "awslogs": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": ["/etc/awslogs/awslogs.conf"]
+                }
               }
             }
           }
@@ -778,6 +827,27 @@
             "Fn::Join": ["", [
               "#!/bin/bash -xe\n",
               "yum update -y aws-cfn-bootstrap\n",
+              "yum install -y aws-cli\n",
+              "yum install nodejs npm --enablerepo=epel -y\n",
+
+              "# Helper function.\n",
+              "function error_exit\n",
+              "{\n",
+              "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" ",
+              "    --stack ", {
+                "Ref": "AWS::StackId"
+              },
+              "    --resource WebServerAutoScalingGroup ",
+              "    --region ", {
+                "Ref": "AWS::Region"
+              }, "\n",
+              "  exit 1\n",
+              "}\n",
+
+              "# Install the AWS CodeDeploy Agent.\n",
+              "cd /home/ec2-user/\n",
+              "aws s3 cp 's3://aws-codedeploy-us-west-2/latest/codedeploy-agent.noarch.rpm' . || error_exit 'Failed to download AWS CodeDeploy Agent.'\n",
+              "yum -y install codedeploy-agent.noarch.rpm || error_exit 'Failed to install AWS CodeDeploy Agent.' \n",
 
               "# Install the sample application\n",
               "/opt/aws/bin/cfn-init -v ",
@@ -788,7 +858,7 @@
               "    --configsets install_all ",
               "    --region ", {
                 "Ref": "AWS::Region"
-              }, "\n",
+              }, " || error_exit 'Failed to run cfn-init.'\n",
 
               "# Signal completion\n",
               "/opt/aws/bin/cfn-signal -e $? ",
@@ -873,6 +943,60 @@
         }],
         "ComparisonOperator": "LessThanThreshold"
       }
+    },
+
+    "CodeDeployTrustRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [{
+            "Sid": "1",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "codedeploy.us-east-1.amazonaws.com",
+                "codedeploy.us-west-2.amazonaws.com"
+              ]
+            },
+            "Action": "sts:AssumeRole"
+          }]
+        },
+        "Path": "/"
+      }
+    },
+
+    "CodeDeployRolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "CodeDeployPolicy",
+        "PolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Resource": [
+              "*"
+            ],
+            "Action": [
+              "ec2:Describe*"
+            ]
+          }, {
+            "Effect": "Allow",
+            "Resource": [
+              "*"
+            ],
+            "Action": [
+              "autoscaling:CompleteLifecycleAction",
+              "autoscaling:DeleteLifecycleHook",
+              "autoscaling:DescribeLifecycleHooks",
+              "autoscaling:DescribeAutoScalingGroups",
+              "autoscaling:PutLifecycleHook",
+              "autoscaling:RecordLifecycleActionHeartbeat"
+            ]
+          }]
+        },
+        "Roles": [{
+          "Ref": "CodeDeployTrustRole"
+        }]
+      }
     }
   },
 
@@ -897,6 +1021,15 @@
       "Description": "Web Server Security Group",
       "Value": {
         "Ref": "WebServerSecurityGroup"
+      }
+    },
+
+    "CodeDeployTrustRoleARN": {
+      "Value": {
+        "Fn::GetAtt": [
+          "CodeDeployTrustRole",
+          "Arn"
+        ]
       }
     }
   }
