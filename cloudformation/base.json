@@ -117,7 +117,15 @@
       "AllowedValues": ["true", "false"],
       "ConstraintDescription": "must be true or false."
     },
-    
+
+    "DBReadReplica": {
+      "Description": "Create a read replica database",
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": ["true", "false"],
+      "ConstraintDescription": "must be true or false."
+    },
+
     "EnvNodeEnv": {
       "Description": "Environment variable for NODE_ENV",
       "Type": "String",
@@ -158,21 +166,18 @@
     
     "EnvFacebookAppId": {
       "Description": "Environment variable for Facebook App ID",
-      "Type": "String",
-      "Default": "845171498857766"
+      "Type": "String"
     },
     
     "EnvFacebookSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Facebook App Secret",
-      "Type": "String",
-      "Default": "d0101025dcc718729e350c2314fb98ea"
+      "Type": "String"
     },
     
     "EnvGoogleAppId": {
       "Description": "Environment variable for Google App ID",
-      "Type": "String",
-      "Default": "433628801488-v02jjpd5r9ig0pdacbhpill2asuqtvnf.apps.googleusercontent.com"
+      "Type": "String"
     },
     
     "EnvGoogleSecret": {
@@ -258,6 +263,36 @@
           },
           "SSHLocation": {
             "Ref": "SSHLocation"
+          },
+          "EnvNodeEnv": {
+            "Ref": "EnvNodeEnv"
+          },
+          "EnvDbServer": {
+            "Ref": "EnvDbServer"
+          },
+          "EnvDbName": {
+            "Ref": "EnvDbName"
+          },
+          "EnvTokenSecret": {
+            "Ref": "EnvTokenSecret"
+          },
+          "EnvMandrillUser": {
+            "Ref": "EnvMandrillUser"
+          },
+          "EnvMandrillPassword": {
+            "Ref": "EnvMandrillPassword"
+          },
+          "EnvFacebookAppId": {
+            "Ref": "EnvFacebookAppId"
+          },
+          "EnvFacebookSecret": {
+            "Ref": "EnvFacebookSecret"
+          },
+          "EnvGoogleAppId": {
+            "Ref": "EnvGoogleAppId"
+          },
+          "EnvGoogleSecret": {
+            "Ref": "EnvGoogleSecret"
           }
         }
       }
@@ -296,6 +331,9 @@
           },
           "DBMultiAZ": {
             "Ref": "DBMultiAZ"
+          },
+          "DBReadReplica": {
+            "Ref": "DBReadReplica"
           }
         }
       }

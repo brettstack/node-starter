@@ -76,6 +76,14 @@
       "Default": "false",
       "AllowedValues": ["true", "false"],
       "ConstraintDescription": "must be true or false."
+    },
+
+    "DBReadReplica": {
+      "Description": "Create a read replica database",
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": ["true", "false"],
+      "ConstraintDescription": "must be true or false."
     }
   },
 
@@ -237,6 +245,7 @@
 
     "ReplicaDB": {
       "Type": "AWS::RDS::DBInstance",
+      "Condition": "DBReadReplica",
       "Properties": {
         "SourceDBInstanceIdentifier": {
           "Ref": "MasterDB"
@@ -271,6 +280,7 @@
 
     "ReplicaJDBCConnectionString": {
       "Description": "JDBC connection string for the replica database",
+      "Condition": "DBReadReplica",
       "Value": {
         "Fn::Join": ["", ["jdbc:postgres://", {
             "Fn::GetAtt": ["ReplicaDB", "Endpoint.Address"]

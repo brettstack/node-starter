@@ -18,7 +18,7 @@
       "ConstraintDescription": "must be the name of an existing EC2 KeyPair.",
       "Default": "rpg-staging"
     },
-    
+
     "TagKey": {
       "Description": "The EC2 tag key that identifies this as a target for deployments.",
       "Type": "String",
@@ -26,7 +26,7 @@
       "AllowedPattern": "[\\x20-\\x7E]*",
       "ConstraintDescription": "Can contain only ASCII characters."
     },
-    
+
     "TagValue": {
       "Description": "The EC2 tag value that identifies this as a target for deployments.",
       "Type": "String",
@@ -76,7 +76,7 @@
       "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters.",
       "Default": "rpg_staging"
     },
-    
+
     "DBUser": {
       "NoEcho": "true",
       "Description": "The database admin account username",
@@ -123,64 +123,72 @@
       "AllowedValues": ["true", "false"],
       "ConstraintDescription": "must be true or false."
     },
-    
+
+    "DBReadReplica": {
+      "Description": "Create a read replica database",
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": ["true", "false"],
+      "ConstraintDescription": "must be true or false."
+    },
+
     "EnvNodeEnv": {
       "Description": "Environment variable for NODE_ENV",
       "Type": "String",
       "Default": "staging"
     },
-    
+
     "EnvDbServer": {
       "Description": "Environment variable for DB Connection String",
       "Type": "String",
       "Default": "postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/"
     },
-    
+
     "EnvDbName": {
       "Description": "Environment variable for DB Name",
       "Type": "String",
       "Default": "rpg_staging"
     },
-    
+
     "EnvTokenSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Token Secret",
       "Type": "String",
       "Default": "itsasecret"
     },
-    
+
     "EnvMandrillUser": {
       "Description": "Environment variable for Mandrill User",
       "Type": "String",
       "Default": "brett.j.andrews@gmail.com"
     },
-    
+
     "EnvMandrillPassword": {
       "NoEcho": "true",
       "Description": "Environment variable for Mandrill Password",
       "Type": "String",
       "Default": "pcimy62aFIxJJlo5D303dQ"
     },
-    
+
     "EnvFacebookAppId": {
       "Description": "Environment variable for Facebook App ID",
       "Type": "String",
       "Default": "845171498857766"
     },
-    
+
     "EnvFacebookSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Facebook App Secret",
       "Type": "String",
       "Default": "d0101025dcc718729e350c2314fb98ea"
     },
-    
+
     "EnvGoogleAppId": {
       "Description": "Environment variable for Google App ID",
       "Type": "String",
       "Default": "433628801488-v02jjpd5r9ig0pdacbhpill2asuqtvnf.apps.googleusercontent.com"
     },
-    
+
     "EnvGoogleSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Google App Secret",
@@ -188,7 +196,7 @@
       "Default": "nnRYgpfWnpf5tH2YycUhl9RP"
     }
   },
-  
+
   "Resources": {
     "BaseStack": {
       "Type": "AWS::CloudFormation::Stack",
@@ -238,7 +246,9 @@
           "DBMultiAZ": {
             "Ref": "DBMultiAZ"
           },
-          
+          "DBReadReplica": {
+            "Ref": "DBReadReplica"
+          },
           "EnvNodeEnv": {
             "Ref": "EnvNodeEnv"
           },
