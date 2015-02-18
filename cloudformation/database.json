@@ -87,6 +87,16 @@
     }
   },
 
+  "Conditions": {
+    "CreateReadReplica": {
+      "Fn::Equals": [{
+          "Ref": "DBReadReplica"
+        },
+        "true"
+      ]
+    }
+  },
+
   "Mappings": {
     "SubnetConfig": {
       "DB1": {
@@ -245,7 +255,7 @@
 
     "ReplicaDB": {
       "Type": "AWS::RDS::DBInstance",
-      "Condition": "DBReadReplica",
+      "Condition": "CreateReadReplica",
       "Properties": {
         "SourceDBInstanceIdentifier": {
           "Ref": "MasterDB"
@@ -280,7 +290,7 @@
 
     "ReplicaJDBCConnectionString": {
       "Description": "JDBC connection string for the replica database",
-      "Condition": "DBReadReplica",
+      "Condition": "CreateReadReplica",
       "Value": {
         "Fn::Join": ["", ["jdbc:postgres://", {
             "Fn::GetAtt": ["ReplicaDB", "Endpoint.Address"]
