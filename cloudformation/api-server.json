@@ -71,64 +71,64 @@
       "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
       "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x."
     },
-    
+
     "EnvNodeEnv": {
       "Description": "Environment variable for NODE_ENV",
       "Type": "String",
       "Default": "staging"
     },
-    
+
     "EnvDbServer": {
       "Description": "Environment variable for DB Connection String",
       "Type": "String",
       "Default": "postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/"
     },
-    
+
     "EnvDbName": {
       "Description": "Environment variable for DB Name",
       "Type": "String",
       "Default": "rpg_staging"
     },
-    
+
     "EnvTokenSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Token Secret",
       "Type": "String",
       "Default": "itsasecret"
     },
-    
+
     "EnvMandrillUser": {
       "Description": "Environment variable for Mandrill User",
       "Type": "String",
       "Default": "brett.j.andrews@gmail.com"
     },
-    
+
     "EnvMandrillPassword": {
       "NoEcho": "true",
       "Description": "Environment variable for Mandrill Password",
       "Type": "String",
       "Default": "pcimy62aFIxJJlo5D303dQ"
     },
-    
+
     "EnvFacebookAppId": {
       "Description": "Environment variable for Facebook App ID",
       "Type": "String",
       "Default": "845171498857766"
     },
-    
+
     "EnvFacebookSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Facebook App Secret",
       "Type": "String",
       "Default": "d0101025dcc718729e350c2314fb98ea"
     },
-    
+
     "EnvGoogleAppId": {
       "Description": "Environment variable for Google App ID",
       "Type": "String",
       "Default": "433628801488-v02jjpd5r9ig0pdacbhpill2asuqtvnf.apps.googleusercontent.com"
     },
-    
+
     "EnvGoogleSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Google App Secret",
@@ -580,7 +580,7 @@
         }]
       }
     },
-    
+
     "LogsBucket": {
       "Type": "AWS::S3::Bucket",
       "DeletionPolicy": "Retain"
@@ -750,19 +750,28 @@
             }
           },
           "install_app": {
-            "packages": {
-              "yum": {
-                "httpd": []
-              }
-            },
             "files": {
-              "/var/www/html/index.html": {
+              "/tmp/api-server/scripts/npm-install.sh": {
                 "content": {
                   "Fn::Join": ["\n", [
-                    "<h1>Congratulations, you have successfully launched the AWS CloudFormation sample.</h1>"
+                    "#!/bin/bash",
+                    "cd /var/api",
+                    "npm install"
                   ]]
                 },
-                "mode": "000644",
+                "mode": "000755",
+                "owner": "root",
+                "group": "root"
+              },
+              "/tmp/api-server/scripts/npm-start.sh": {
+                "content": {
+                  "Fn::Join": ["\n", [
+                    "#!/bin/bash",
+                    "cd /var/api",
+                    "npm start"
+                  ]]
+                },
+                "mode": "000755",
                 "owner": "root",
                 "group": "root"
               }
@@ -894,18 +903,38 @@
               "yum update -y aws-cfn-bootstrap\n",
               "yum install -y aws-cli\n",
               "yum install nodejs npm --enablerepo=epel -y\n",
-              
+
               "# Set Environment Variables.\n",
-              "export NODE_ENV=", { "Ref": "EnvNodeEnv"}, "\n",
-              "export DB_SERVER=", { "Ref": "EnvDbServer"}, "\n",
-              "export DB_NAME=", { "Ref": "EnvDbName"}, "\n",
-              "export TOKEN_SECRET=", { "Ref": "EnvTokenSecret"}, "\n",
-              "export MANDRILL_USER=", { "Ref": "EnvMandrillUser"}, "\n",
-              "export MANDRILL_PASSWORD=", { "Ref": "EnvMandrillPassword"}, "\n",
-              "export FACEBOOK_ID=", { "Ref": "EnvFacebookAppId"}, "\n",
-              "export FACEBOOK_SECRET=", { "Ref": "EnvFacebookSecret"}, "\n",
-              "export GOOGLE_ID=", { "Ref": "EnvGoogleAppId"}, "\n",
-              "export GOOGLE_SECRET=", { "Ref": "EnvGoogleSecret"}, "\n",
+              "export NODE_ENV=", {
+                "Ref": "EnvNodeEnv"
+              }, "\n",
+              "export DB_SERVER=", {
+                "Ref": "EnvDbServer"
+              }, "\n",
+              "export DB_NAME=", {
+                "Ref": "EnvDbName"
+              }, "\n",
+              "export TOKEN_SECRET=", {
+                "Ref": "EnvTokenSecret"
+              }, "\n",
+              "export MANDRILL_USER=", {
+                "Ref": "EnvMandrillUser"
+              }, "\n",
+              "export MANDRILL_PASSWORD=", {
+                "Ref": "EnvMandrillPassword"
+              }, "\n",
+              "export FACEBOOK_ID=", {
+                "Ref": "EnvFacebookAppId"
+              }, "\n",
+              "export FACEBOOK_SECRET=", {
+                "Ref": "EnvFacebookSecret"
+              }, "\n",
+              "export GOOGLE_ID=", {
+                "Ref": "EnvGoogleAppId"
+              }, "\n",
+              "export GOOGLE_SECRET=", {
+                "Ref": "EnvGoogleSecret"
+              }, "\n",
 
               "# Error Helper function.\n",
               "function error_exit\n",
@@ -1100,7 +1129,7 @@
         "Ref": "ApiServerSecurityGroup"
       }
     },
-    
+
     "ApiServerAutoScalingGroup": {
       "Description": "Auto Scaling Group",
       "Value": {
