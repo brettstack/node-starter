@@ -5,7 +5,7 @@ files:
     destination: /var/api/
 hooks:
   AfterInstall:
-    - location: scripts/code-deploy-ater-install.sh
+    - location: scripts/code-deploy-after-install.sh
       runas: root
       timeout: 300
   ApplicationStart:
