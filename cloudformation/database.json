@@ -9,7 +9,7 @@
       "Type": "String"
     },
 
-    "WebServerSecurityGroup": {
+    "ApiServerSecurityGroup": {
       "Description": "Web Server Security Group",
       "Type": "String"
     },
@@ -203,7 +203,7 @@
           "FromPort": "5432",
           "ToPort": "5432",
           "SourceSecurityGroupId": {
-            "Ref": "WebServerSecurityGroup"
+            "Ref": "ApiServerSecurityGroup"
           }
         }, {
           "IpProtocol": "tcp",

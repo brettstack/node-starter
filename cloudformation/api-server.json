@@ -41,16 +41,16 @@
       "Type": "String"
     },
 
-    "WebServerInstanceType": {
-      "Description": "WebServer Server EC2 instance type",
+    "ApiServerInstanceType": {
+      "Description": "ApiServer Server EC2 instance type",
       "Type": "String",
       "Default": "t2.micro",
       "AllowedValues": ["t1.micro", "t2.micro", "t2.small", "t2.medium", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "g2.2xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
       "ConstraintDescription": "must be a valid EC2 instance type."
     },
 
-    "WebServerCount": {
-      "Description": "Number of EC2 instances to launch for the WebServer server",
+    "ApiServerCount": {
+      "Description": "Number of EC2 instances to launch for the ApiServer server",
       "Type": "Number",
       "Default": "1"
     },
@@ -482,7 +482,7 @@
       }
     },
 
-    "WebServerAutoScalingGroup": {
+    "ApiServerAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
         "AvailabilityZones": [{
@@ -492,12 +492,12 @@
           "Ref": "PublicSubnet"
         }],
         "LaunchConfigurationName": {
-          "Ref": "WebServerLaunchConfig"
+          "Ref": "ApiServerLaunchConfig"
         },
         "MinSize": "1",
         "MaxSize": "10",
         "DesiredCapacity": {
-          "Ref": "WebServerCount"
+          "Ref": "ApiServerCount"
         },
         "LoadBalancerNames": [{
           "Ref": "PublicElasticLoadBalancer"
@@ -530,7 +530,7 @@
         "ResourceSignal": {
           "Timeout": "PT45M",
           "Count": {
-            "Ref": "WebServerCount"
+            "Ref": "ApiServerCount"
           }
         }
       },
@@ -544,7 +544,7 @@
       }
     },
 
-    "WebServerSecurityGroup": {
+    "ApiServerSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Allow access from load balancer and bastion as well as outbound HTTP and HTTPS traffic",
@@ -689,7 +689,7 @@
       }
     },
 
-    "WebServerLaunchConfig": {
+    "ApiServerLaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata": {
         "AWS::CloudFormation::Init": {
@@ -720,12 +720,12 @@
                   "Fn::Join": ["", [
                     "[cfn-auto-reloader-hook]\n",
                     "triggers=post.update\n",
-                    "path=Resources.WebServerLaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                    "path=Resources.ApiServerLaunchConfig.Metadata.AWS::CloudFormation::Init\n",
                     "action=/opt/aws/bin/cfn-init -v ",
                     "         --stack ", {
                       "Ref": "AWS::StackName"
                     },
-                    "         --resource WebServerLaunchConfig ",
+                    "         --resource ApiServerLaunchConfig ",
                     "         --configsets install_all ",
                     "         --region ", {
                       "Ref": "AWS::Region"
@@ -869,7 +869,7 @@
             "Ref": "AWS::Region"
           }, {
             "Fn::FindInMap": ["AWSInstanceType2Arch", {
-              "Ref": "WebServerInstanceType"
+              "Ref": "ApiServerInstanceType"
             }, "Arch"]
           }]
         },
@@ -877,10 +877,10 @@
           "Ref": "ApiServerRoleInstanceProfile"
         },
         "SecurityGroups": [{
-          "Ref": "WebServerSecurityGroup"
+          "Ref": "ApiServerSecurityGroup"
         }],
         "InstanceType": {
-          "Ref": "WebServerInstanceType"
+          "Ref": "ApiServerInstanceType"
         },
         "KeyName": {
           "Ref": "KeyName"
@@ -890,6 +890,7 @@
           "Fn::Base64": {
             "Fn::Join": ["", [
               "#!/bin/bash -xe\n",
+              "# Install Dependencies\n",
               "yum update -y aws-cfn-bootstrap\n",
               "yum install -y aws-cli\n",
               "yum install nodejs npm --enablerepo=epel -y\n",
@@ -906,14 +907,14 @@
               "export GOOGLE_ID=", { "Ref": "EnvGoogleAppId"}, "\n",
               "export GOOGLE_SECRET=", { "Ref": "EnvGoogleSecret"}, "\n",
 
-              "# Helper function.\n",
+              "# Error Helper function.\n",
               "function error_exit\n",
               "{\n",
               "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" ",
               "    --stack ", {
                 "Ref": "AWS::StackId"
               },
-              "    --resource WebServerAutoScalingGroup ",
+              "    --resource ApiServerAutoScalingGroup ",
               "    --region ", {
                 "Ref": "AWS::Region"
               }, "\n",
@@ -925,12 +926,12 @@
               "aws s3 cp 's3://aws-codedeploy-us-west-2/latest/codedeploy-agent.noarch.rpm' . || error_exit 'Failed to download AWS CodeDeploy Agent.'\n",
               "yum -y install codedeploy-agent.noarch.rpm || error_exit 'Failed to install AWS CodeDeploy Agent.' \n",
 
-              "# Install the sample application\n",
+              "# Install the application\n",
               "/opt/aws/bin/cfn-init -v ",
               "    --stack ", {
                 "Ref": "AWS::StackId"
               },
-              "    --resource WebServerLaunchConfig ",
+              "    --resource ApiServerLaunchConfig ",
               "    --configsets install_all ",
               "    --region ", {
                 "Ref": "AWS::Region"
@@ -941,7 +942,7 @@
               "    --stack ", {
                 "Ref": "AWS::StackId"
               },
-              "    --resource WebServerAutoScalingGroup ",
+              "    --resource ApiServerAutoScalingGroup ",
               "    --region ", {
                 "Ref": "AWS::Region"
               }, "\n"
@@ -951,24 +952,24 @@
       }
     },
 
-    "WebServerScaleUpPolicy": {
+    "ApiServerScaleUpPolicy": {
       "Type": "AWS::AutoScaling::ScalingPolicy",
       "Properties": {
         "AdjustmentType": "ChangeInCapacity",
         "AutoScalingGroupName": {
-          "Ref": "WebServerAutoScalingGroup"
+          "Ref": "ApiServerAutoScalingGroup"
         },
         "Cooldown": "60",
         "ScalingAdjustment": "1"
       }
     },
 
-    "WebServerScaleDownPolicy": {
+    "ApiServerScaleDownPolicy": {
       "Type": "AWS::AutoScaling::ScalingPolicy",
       "Properties": {
         "AdjustmentType": "ChangeInCapacity",
         "AutoScalingGroupName": {
-          "Ref": "WebServerAutoScalingGroup"
+          "Ref": "ApiServerAutoScalingGroup"
         },
         "Cooldown": "60",
         "ScalingAdjustment": "-1"
@@ -986,12 +987,12 @@
         "EvaluationPeriods": "2",
         "Threshold": "90",
         "AlarmActions": [{
-          "Ref": "WebServerScaleUpPolicy"
+          "Ref": "ApiServerScaleUpPolicy"
         }],
         "Dimensions": [{
           "Name": "AutoScalingGroupName",
           "Value": {
-            "Ref": "WebServerAutoScalingGroup"
+            "Ref": "ApiServerAutoScalingGroup"
           }
         }],
         "ComparisonOperator": "GreaterThanThreshold"
@@ -1009,12 +1010,12 @@
         "EvaluationPeriods": "2",
         "Threshold": "70",
         "AlarmActions": [{
-          "Ref": "WebServerScaleDownPolicy"
+          "Ref": "ApiServerScaleDownPolicy"
         }],
         "Dimensions": [{
           "Name": "AutoScalingGroupName",
           "Value": {
-            "Ref": "WebServerAutoScalingGroup"
+            "Ref": "ApiServerAutoScalingGroup"
           }
         }],
         "ComparisonOperator": "LessThanThreshold"
@@ -1093,10 +1094,17 @@
       }
     },
 
-    "WebServerSecurityGroup": {
+    "ApiServerSecurityGroup": {
       "Description": "Web Server Security Group",
       "Value": {
-        "Ref": "WebServerSecurityGroup"
+        "Ref": "ApiServerSecurityGroup"
+      }
+    },
+    
+    "ApiServerAutoScalingGroup": {
+      "Description": "Auto Scaling Group",
+      "Value": {
+        "Ref": "ApiServerAutoScalingGroup"
       }
     },
 

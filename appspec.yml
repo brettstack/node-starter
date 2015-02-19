@@ -3,3 +3,12 @@ os: linux
 files:
   - source: /
     destination: /var/api/
+hooks:
+  AfterInstall:
+    - location: scripts/code-deploy-ater-install.sh
+      runas: root
+      timeout: 300
+  ApplicationStart:
+    - location: scripts/code-deploy-application-start.sh
+      runas: root
+      timeout: 60
