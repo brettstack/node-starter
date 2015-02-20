@@ -5,10 +5,10 @@ files:
     destination: /var/api/
 hooks:
   AfterInstall:
-    - location: /var/tmp/api-server/scripts/npm-install.sh
+    - location: scripts/npm-install.sh
       runas: root
       timeout: 300
   ApplicationStart:
-    - location: /var/tmp/api-server/scripts/npm-start.sh
+    - location: scripts/npm-start.sh
       runas: root
       timeout: 60

@@ -690,10 +690,40 @@
       }
     },
 
-    "CloudFormationLogs": {
+    "ApiServerLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
         "RetentionInDays": 7
+      }
+    },
+
+    "404MetricFilter": {
+      "Type": "AWS::Logs::MetricFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "ApiServerLogGroup"
+        },
+        "FilterPattern": "[ip, identity, user_id, timestamp, request, status_code = 404, size, ...]",
+        "MetricTransformations": [{
+          "MetricValue": "1",
+          "MetricNamespace": "AWS/404s",
+          "MetricName": "test404Count"
+        }]
+      }
+    },
+
+    "BytesTransferredMetricFilter": {
+      "Type": "AWS::Logs::MetricFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "ApiServerLogGroup"
+        },
+        "FilterPattern": "[ip, identity, user_id, timestamp, request, status_code, size, ...]",
+        "MetricTransformations": [{
+          "MetricValue": "$size",
+          "MetricNamespace": "AWS/BytesTransferred",
+          "MetricName": "testBytesTransferred"
+        }]
       }
     },
 
@@ -774,6 +804,76 @@
                 "owner": "root",
                 "group": "root"
               },
+              "/home/ec2-user/.bash_login": {
+                "content": {
+                  "Fn::Join": ["", ["export NODE_ENV=", {
+                      "Ref": "EnvNodeEnv"
+                    }, "\n",
+                    "export DB_SERVER=", {
+                      "Ref": "EnvDbServer"
+                    }, "\n",
+                    "export DB_NAME=", {
+                      "Ref": "EnvDbName"
+                    }, "\n",
+                    "export TOKEN_SECRET=", {
+                      "Ref": "EnvTokenSecret"
+                    }, "\n",
+                    "export MANDRILL_USER=", {
+                      "Ref": "EnvMandrillUser"
+                    }, "\n",
+                    "export MANDRILL_PASSWORD=", {
+                      "Ref": "EnvMandrillPassword"
+                    }, "\n",
+                    "export FACEBOOK_ID=", {
+                      "Ref": "EnvFacebookAppId"
+                    }, "\n",
+                    "export FACEBOOK_SECRET=", {
+                      "Ref": "EnvFacebookSecret"
+                    }, "\n",
+                    "export GOOGLE_ID=", {
+                      "Ref": "EnvGoogleAppId"
+                    }, "\n",
+                    "export GOOGLE_SECRET=", {
+                      "Ref": "EnvGoogleSecret"
+                    }
+                  ]]
+                }
+              },
+              "/home/ec2-user/.bashrc": {
+                "content": {
+                  "Fn::Join": ["", ["export NODE_ENV=", {
+                      "Ref": "EnvNodeEnv"
+                    }, "\n",
+                    "export DB_SERVER=", {
+                      "Ref": "EnvDbServer"
+                    }, "\n",
+                    "export DB_NAME=", {
+                      "Ref": "EnvDbName"
+                    }, "\n",
+                    "export TOKEN_SECRET=", {
+                      "Ref": "EnvTokenSecret"
+                    }, "\n",
+                    "export MANDRILL_USER=", {
+                      "Ref": "EnvMandrillUser"
+                    }, "\n",
+                    "export MANDRILL_PASSWORD=", {
+                      "Ref": "EnvMandrillPassword"
+                    }, "\n",
+                    "export FACEBOOK_ID=", {
+                      "Ref": "EnvFacebookAppId"
+                    }, "\n",
+                    "export FACEBOOK_SECRET=", {
+                      "Ref": "EnvFacebookSecret"
+                    }, "\n",
+                    "export GOOGLE_ID=", {
+                      "Ref": "EnvGoogleAppId"
+                    }, "\n",
+                    "export GOOGLE_SECRET=", {
+                      "Ref": "EnvGoogleSecret"
+                    }
+                  ]]
+                }
+              },
               "/var/tmp/api-server/scripts/npm-install.sh": {
                 "content": {
                   "Fn::Join": ["\n", [
@@ -827,7 +927,7 @@
                     "[/var/log/cloud-init.log]\n",
                     "file = /var/log/cloud-init.log\n",
                     "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
+                      "Ref": "ApiServerLogGroup"
                     }, "\n",
                     "log_stream_name = {instance_id}/cloud-init.log\n",
                     "datetime_format = \n",
@@ -835,7 +935,7 @@
                     "[/var/log/cloud-init-output.log]\n",
                     "file = /var/log/cloud-init-output.log\n",
                     "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
+                      "Ref": "ApiServerLogGroup"
                     }, "\n",
                     "log_stream_name = {instance_id}/cloud-init-output.log\n",
                     "datetime_format = \n",
@@ -843,7 +943,7 @@
                     "[/var/log/cfn-init.log]\n",
                     "file = /var/log/cfn-init.log\n",
                     "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
+                      "Ref": "ApiServerLogGroup"
                     }, "\n",
                     "log_stream_name = {instance_id}/cfn-init.log\n",
                     "datetime_format = \n",
@@ -851,7 +951,7 @@
                     "[/var/log/cfn-hup.log]\n",
                     "file = /var/log/cfn-hup.log\n",
                     "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
+                      "Ref": "ApiServerLogGroup"
                     }, "\n",
                     "log_stream_name = {instance_id}/cfn-hup.log\n",
                     "datetime_format = \n",
@@ -859,7 +959,7 @@
                     "[/var/log/cfn-wire.log]\n",
                     "file = /var/log/cfn-wire.log\n",
                     "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
+                      "Ref": "ApiServerLogGroup"
                     }, "\n",
                     "log_stream_name = {instance_id}/cfn-wire.log\n",
                     "datetime_format = \n",
@@ -867,7 +967,7 @@
                     "[/var/log/httpd]\n",
                     "file = /var/log/httpd/*\n",
                     "log_group_name = ", {
-                      "Ref": "CloudFormationLogs"
+                      "Ref": "ApiServerLogGroup"
                     }, "\n",
                     "log_stream_name = {instance_id}/httpd\n",
                     "datetime_format = %d/%b/%Y:%H:%M:%S\n"
@@ -926,38 +1026,6 @@
               "yum update -y aws-cfn-bootstrap\n",
               "yum install -y aws-cli\n",
               "yum install nodejs npm --enablerepo=epel -y\n",
-
-              "# Set Environment Variables.\n",
-              "export NODE_ENV=", {
-                "Ref": "EnvNodeEnv"
-              }, "\n",
-              "export DB_SERVER=", {
-                "Ref": "EnvDbServer"
-              }, "\n",
-              "export DB_NAME=", {
-                "Ref": "EnvDbName"
-              }, "\n",
-              "export TOKEN_SECRET=", {
-                "Ref": "EnvTokenSecret"
-              }, "\n",
-              "export MANDRILL_USER=", {
-                "Ref": "EnvMandrillUser"
-              }, "\n",
-              "export MANDRILL_PASSWORD=", {
-                "Ref": "EnvMandrillPassword"
-              }, "\n",
-              "export FACEBOOK_ID=", {
-                "Ref": "EnvFacebookAppId"
-              }, "\n",
-              "export FACEBOOK_SECRET=", {
-                "Ref": "EnvFacebookSecret"
-              }, "\n",
-              "export GOOGLE_ID=", {
-                "Ref": "EnvGoogleAppId"
-              }, "\n",
-              "export GOOGLE_SECRET=", {
-                "Ref": "EnvGoogleSecret"
-              }, "\n",
 
               "# Error Helper function.\n",
               "function error_exit\n",
@@ -1040,6 +1108,8 @@
         "Threshold": "90",
         "AlarmActions": [{
           "Ref": "ApiServerScaleUpPolicy"
+        }, {
+          "Ref": "NotificationTopic"
         }],
         "Dimensions": [{
           "Name": "AutoScalingGroupName",
@@ -1063,6 +1133,8 @@
         "Threshold": "70",
         "AlarmActions": [{
           "Ref": "ApiServerScaleDownPolicy"
+        }, {
+          "Ref": "NotificationTopic"
         }],
         "Dimensions": [{
           "Name": "AutoScalingGroupName",
@@ -1071,6 +1143,42 @@
           }
         }],
         "ComparisonOperator": "LessThanThreshold"
+      }
+    },
+
+    "BandwidthAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "The average volume of traffic is greater 3500 KB over 10 minutes",
+        "MetricName": "BytesTransferred",
+        "Namespace": "AWS/BytesTransferred",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "2",
+        "Threshold": "3500",
+        "AlarmActions": [{
+          "Ref": "NotificationTopic"
+        }],
+        "Unit": "Kilobytes",
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+
+    "404Alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "The number of 404s is greater than 2 over 2 minutes",
+        "MetricName": "404Count",
+        "Namespace": "AWS/404s",
+        "Statistic": "Sum",
+        "Period": "60",
+        "EvaluationPeriods": "2",
+        "Threshold": "2",
+        "AlarmActions": [{
+          "Ref": "NotificationTopic"
+        }],
+        "Unit": "Count",
+        "ComparisonOperator": "GreaterThanThreshold"
       }
     },
 
@@ -1166,6 +1274,12 @@
           "CodeDeployTrustRole",
           "Arn"
         ]
+      }
+    },
+    "CloudWatchLogGroupName": {
+      "Description": "The name of the CloudWatch log group",
+      "Value": {
+        "Ref": "ApiServerLogGroup"
       }
     }
   }
