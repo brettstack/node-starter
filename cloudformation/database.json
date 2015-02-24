@@ -9,7 +9,7 @@
       "Type": "String"
     },
 
-    "ApiServerSecurityGroup": {
+    "CommonSecurityGroup": {
       "Description": "Web Server Security Group",
       "Type": "String"
     },
@@ -31,6 +31,13 @@
       "MaxLength": "64",
       "AllowedPattern": "[a-zA-Z][a-zA-Z0-9_]*",
       "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    },
+    
+    "DBInstanceIdentifier": {
+      "Description": "Database instance name",
+      "Type": "String",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9\\-]*",
+      "ConstraintDescription": "Identifiers must begin with a letter; must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens."
     },
 
     "DBUser": {
@@ -203,7 +210,7 @@
           "FromPort": "5432",
           "ToPort": "5432",
           "SourceSecurityGroupId": {
-            "Ref": "ApiServerSecurityGroup"
+            "Ref": "CommonSecurityGroup"
           }
         }, {
           "IpProtocol": "tcp",
@@ -216,7 +223,7 @@
       }
     },
 
-    "MasterDB": {
+    "MasterDb": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
         "PubliclyAccessible": "true",
@@ -225,6 +232,9 @@
         },
         "AllocatedStorage": {
           "Ref": "DBAllocatedStorage"
+        },
+        "DBInstanceIdentifier": {
+          "Ref": "DBInstanceIdentifier"
         },
         "DBInstanceClass": {
           "Ref": "DBInstanceClass"
@@ -253,12 +263,12 @@
       "DeletionPolicy": "Snapshot"
     },
 
-    "ReplicaDB": {
+    "ReplicaDb": {
       "Type": "AWS::RDS::DBInstance",
       "Condition": "CreateReadReplica",
       "Properties": {
         "SourceDBInstanceIdentifier": {
-          "Ref": "MasterDB"
+          "Ref": "MasterDb"
         },
         "DBInstanceClass": {
           "Ref": "DBInstanceClass"
@@ -272,36 +282,72 @@
   },
 
   "Outputs": {
-    "MasterJDBCConnectionString": {
-      "Description": "JDBC connection string for the master database",
+    "MasterDbEndpoint": {
+      "Description": "Master Database Endpoint",
       "Value": {
-        "Fn::Join": ["", ["jdbc:postgres://", {
-            "Fn::GetAtt": ["MasterDB", "Endpoint.Address"]
+        "Fn::Join": ["", [{
+            "Fn::GetAtt": ["MasterDb", "Endpoint.Address"]
           },
           ":", {
-            "Fn::GetAtt": ["MasterDB", "Endpoint.Port"]
-          },
-          "/", {
-            "Ref": "DBName"
+            "Fn::GetAtt": ["MasterDb", "Endpoint.Port"]
           }
         ]]
       }
     },
 
-    "ReplicaJDBCConnectionString": {
-      "Description": "JDBC connection string for the replica database",
-      "Condition": "CreateReadReplica",
+    "MasterDbConnectionString": {
+      "Description": "Master Database Connection String",
       "Value": {
-        "Fn::Join": ["", ["jdbc:postgres://", {
-            "Fn::GetAtt": ["ReplicaDB", "Endpoint.Address"]
+        "Fn::Join": ["", ["postgres://", {
+            "Fn::GetAtt": ["MasterDb", "Endpoint.Address"]
           },
           ":", {
-            "Fn::GetAtt": ["ReplicaDB", "Endpoint.Port"]
-          },
-          "/", {
-            "Ref": "DBName"
+            "Fn::GetAtt": ["MasterDb", "Endpoint.Port"]
           }
         ]]
+      }
+    },
+
+    "MasterDbName": {
+      "Description": "Master Database Name",
+      "Value": {
+        "Ref": "DBName"
+      }
+    },
+
+    "ReplicaDbEndpoint": {
+      "Description": "Replica Database Endpoint",
+      "Condition": "CreateReadReplica",
+      "Value": {
+        "Fn::Join": ["", [{
+            "Fn::GetAtt": ["ReplicaDb", "Endpoint.Address"]
+          },
+          ":", {
+            "Fn::GetAtt": ["ReplicaDb", "Endpoint.Port"]
+          }
+        ]]
+      }
+    },
+
+    "ReplicaDbConnectionString": {
+      "Description": "Replica Database Connection String",
+      "Condition": "CreateReadReplica",
+      "Value": {
+        "Fn::Join": ["", ["postgres://", {
+            "Fn::GetAtt": ["ReplicaDb", "Endpoint.Address"]
+          },
+          ":", {
+            "Fn::GetAtt": ["ReplicaDb", "Endpoint.Port"]
+          }
+        ]]
+      }
+    },
+
+    "ReplicaDbName": {
+      "Description": "Replica Database Name",
+      "Condition": "CreateReadReplica",
+      "Value": {
+        "Ref": "DBName"
       }
     }
   }

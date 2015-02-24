@@ -21,7 +21,6 @@
     "TagValue": {
       "Description": "The EC2 tag value that identifies this as a target for deployments.",
       "Type": "String",
-      "Default": "RpgStaging",
       "AllowedPattern": "[\\x20-\\x7E]*",
       "ConstraintDescription": "Can contain only ASCII characters."
     },
@@ -41,6 +40,16 @@
       "Type": "String"
     },
 
+    "CommonSecurityGroup": {
+      "Description": "Common Security Group",
+      "Type": "String"
+    },
+
+    "PublicLoadBalancerSecurityGroup": {
+      "Description": "Public Load Balancer Security Group",
+      "Type": "String"
+    },
+
     "ApiServerInstanceType": {
       "Description": "ApiServer Server EC2 instance type",
       "Type": "String",
@@ -53,6 +62,13 @@
       "Description": "Number of EC2 instances to launch for the ApiServer server",
       "Type": "Number",
       "Default": "1"
+    },
+
+    "ApiServerPort": {
+      "Description": "The port on which to run the Api Server",
+      "Type": "String",
+      "Default": "80",
+      "AllowedPattern": "^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
     },
 
     "OperatorEmail": {
@@ -75,19 +91,18 @@
     "EnvNodeEnv": {
       "Description": "Environment variable for NODE_ENV",
       "Type": "String",
-      "Default": "staging"
+      "Default": "production"
     },
 
     "EnvDbServer": {
-      "Description": "Environment variable for DB Connection String",
+      "Description": "Environment variable for DB Server",
       "Type": "String",
-      "Default": "postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/"
+      "Default": "RDS_ENDPOINT.rds.amazonaws.com:5432/"
     },
 
     "EnvDbName": {
       "Description": "Environment variable for DB Name",
-      "Type": "String",
-      "Default": "rpg_staging"
+      "Type": "String"
     },
 
     "EnvTokenSecret": {
@@ -99,54 +114,39 @@
 
     "EnvMandrillUser": {
       "Description": "Environment variable for Mandrill User",
-      "Type": "String",
-      "Default": "brett.j.andrews@gmail.com"
+      "Type": "String"
     },
 
     "EnvMandrillPassword": {
       "NoEcho": "true",
       "Description": "Environment variable for Mandrill Password",
-      "Type": "String",
-      "Default": "pcimy62aFIxJJlo5D303dQ"
+      "Type": "String"
     },
 
     "EnvFacebookAppId": {
       "Description": "Environment variable for Facebook App ID",
-      "Type": "String",
-      "Default": "845171498857766"
+      "Type": "String"
     },
 
     "EnvFacebookSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Facebook App Secret",
-      "Type": "String",
-      "Default": "d0101025dcc718729e350c2314fb98ea"
+      "Type": "String"
     },
 
     "EnvGoogleAppId": {
       "Description": "Environment variable for Google App ID",
-      "Type": "String",
-      "Default": "433628801488-v02jjpd5r9ig0pdacbhpill2asuqtvnf.apps.googleusercontent.com"
+      "Type": "String"
     },
 
     "EnvGoogleSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Google App Secret",
-      "Type": "String",
-      "Default": "nnRYgpfWnpf5tH2YycUhl9RP"
+      "Type": "String"
     }
   },
 
   "Mappings": {
-    "SubnetConfig": {
-      "VPC": {
-        "CIDR": "10.0.0.0/16"
-      },
-      "Public": {
-        "CIDR": "10.0.0.0/24"
-      }
-    },
-
     "AWSInstanceType2Arch": {
       "t1.micro": {
         "Arch": "PV64"
@@ -460,28 +460,6 @@
       "DependsOn": "LogsBucketPolicy"
     },
 
-    "PublicLoadBalancerSecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": "Public ELB Security Group with HTTP access on port 80 from the internet",
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "SecurityGroupIngress": [{
-          "IpProtocol": "tcp",
-          "FromPort": "80",
-          "ToPort": "80",
-          "CidrIp": "0.0.0.0/0"
-        }],
-        "SecurityGroupEgress": [{
-          "IpProtocol": "tcp",
-          "FromPort": "80",
-          "ToPort": "80",
-          "CidrIp": "0.0.0.0/0"
-        }]
-      }
-    },
-
     "ApiServerAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
@@ -541,31 +519,6 @@
           "PauseTime": "PT15M",
           "WaitOnResourceSignals": "true"
         }
-      }
-    },
-
-    "ApiServerSecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": "Allow access from load balancer and bastion as well as outbound HTTP and HTTPS traffic",
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "SecurityGroupIngress": [{
-          "IpProtocol": "tcp",
-          "FromPort": "80",
-          "ToPort": "80",
-          "SourceSecurityGroupId": {
-            "Ref": "PublicLoadBalancerSecurityGroup"
-          }
-        }, {
-          "IpProtocol": "tcp",
-          "FromPort": "22",
-          "ToPort": "22",
-          "CidrIp": {
-            "Ref": "SSHLocation"
-          }
-        }]
       }
     },
 
@@ -706,7 +659,7 @@
         "FilterPattern": "[ip, identity, user_id, timestamp, request, status_code = 404, size, ...]",
         "MetricTransformations": [{
           "MetricValue": "1",
-          "MetricNamespace": "AWS/404s",
+          "MetricNamespace": "test/404s",
           "MetricName": "test404Count"
         }]
       }
@@ -721,7 +674,7 @@
         "FilterPattern": "[ip, identity, user_id, timestamp, request, status_code, size, ...]",
         "MetricTransformations": [{
           "MetricValue": "$size",
-          "MetricNamespace": "AWS/BytesTransferred",
+          "MetricNamespace": "test/BytesTransferred",
           "MetricName": "testBytesTransferred"
         }]
       }
@@ -788,92 +741,7 @@
             }
           },
           "install_app": {
-            "packages": {
-              "yum": {
-                "httpd": []
-              }
-            },
             "files": {
-              "/var/www/html/index.html": {
-                "content": {
-                  "Fn::Join": ["\n", [
-                    "<h1>Congratulations, you have successfully launched the AWS CloudFormation sample.</h1>"
-                  ]]
-                },
-                "mode": "000644",
-                "owner": "root",
-                "group": "root"
-              },
-              "/home/ec2-user/.bash_login": {
-                "content": {
-                  "Fn::Join": ["", ["export NODE_ENV=", {
-                      "Ref": "EnvNodeEnv"
-                    }, "\n",
-                    "export DB_SERVER=", {
-                      "Ref": "EnvDbServer"
-                    }, "\n",
-                    "export DB_NAME=", {
-                      "Ref": "EnvDbName"
-                    }, "\n",
-                    "export TOKEN_SECRET=", {
-                      "Ref": "EnvTokenSecret"
-                    }, "\n",
-                    "export MANDRILL_USER=", {
-                      "Ref": "EnvMandrillUser"
-                    }, "\n",
-                    "export MANDRILL_PASSWORD=", {
-                      "Ref": "EnvMandrillPassword"
-                    }, "\n",
-                    "export FACEBOOK_ID=", {
-                      "Ref": "EnvFacebookAppId"
-                    }, "\n",
-                    "export FACEBOOK_SECRET=", {
-                      "Ref": "EnvFacebookSecret"
-                    }, "\n",
-                    "export GOOGLE_ID=", {
-                      "Ref": "EnvGoogleAppId"
-                    }, "\n",
-                    "export GOOGLE_SECRET=", {
-                      "Ref": "EnvGoogleSecret"
-                    }
-                  ]]
-                }
-              },
-              "/home/ec2-user/.bashrc": {
-                "content": {
-                  "Fn::Join": ["", ["export NODE_ENV=", {
-                      "Ref": "EnvNodeEnv"
-                    }, "\n",
-                    "export DB_SERVER=", {
-                      "Ref": "EnvDbServer"
-                    }, "\n",
-                    "export DB_NAME=", {
-                      "Ref": "EnvDbName"
-                    }, "\n",
-                    "export TOKEN_SECRET=", {
-                      "Ref": "EnvTokenSecret"
-                    }, "\n",
-                    "export MANDRILL_USER=", {
-                      "Ref": "EnvMandrillUser"
-                    }, "\n",
-                    "export MANDRILL_PASSWORD=", {
-                      "Ref": "EnvMandrillPassword"
-                    }, "\n",
-                    "export FACEBOOK_ID=", {
-                      "Ref": "EnvFacebookAppId"
-                    }, "\n",
-                    "export FACEBOOK_SECRET=", {
-                      "Ref": "EnvFacebookSecret"
-                    }, "\n",
-                    "export GOOGLE_ID=", {
-                      "Ref": "EnvGoogleAppId"
-                    }, "\n",
-                    "export GOOGLE_SECRET=", {
-                      "Ref": "EnvGoogleSecret"
-                    }
-                  ]]
-                }
-              },
               "/var/tmp/api-server/scripts/npm-install.sh": {
                 "content": {
                   "Fn::Join": ["\n", [
@@ -897,15 +765,6 @@
                 "mode": "000755",
                 "owner": "root",
                 "group": "root"
-              }
-            },
-            "services": {
-              "sysvinit": {
-                "httpd": {
-                  "enabled": "true",
-                  "ensureRunning": "true",
-                  "files": ["/etc/httpd/conf.d/aptobackend.conf", "/var/www/html/index.html"]
-                }
               }
             }
           },
@@ -962,15 +821,7 @@
                       "Ref": "ApiServerLogGroup"
                     }, "\n",
                     "log_stream_name = {instance_id}/cfn-wire.log\n",
-                    "datetime_format = \n",
-
-                    "[/var/log/httpd]\n",
-                    "file = /var/log/httpd/*\n",
-                    "log_group_name = ", {
-                      "Ref": "ApiServerLogGroup"
-                    }, "\n",
-                    "log_stream_name = {instance_id}/httpd\n",
-                    "datetime_format = %d/%b/%Y:%H:%M:%S\n"
+                    "datetime_format = \n"
                   ]]
                 },
                 "mode": "000444",
@@ -1009,7 +860,7 @@
           "Ref": "ApiServerRoleInstanceProfile"
         },
         "SecurityGroups": [{
-          "Ref": "ApiServerSecurityGroup"
+          "Ref": "CommonSecurityGroup"
         }],
         "InstanceType": {
           "Ref": "ApiServerInstanceType"
@@ -1026,6 +877,16 @@
               "yum update -y aws-cfn-bootstrap\n",
               "yum install -y aws-cli\n",
               "yum install nodejs npm --enablerepo=epel -y\n",
+
+              "#Reroute IP Tables\n",
+              "iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port ", {
+                "Ref": "ApiServerPort"
+              }, " || error_exit 'Failed to set up iptables.' \n",
+              
+              "#Add Environment Variables to bashrc\n",
+              "echo \"export NODE_ENV=", {
+                  "Ref": "EnvNodeEnv"
+                }, "\" >> /home/ec2-user/.bashrc || error_exit 'Failed to set environment variables in bashrc. \n",
 
               "# Error Helper function.\n",
               "function error_exit\n",
@@ -1151,7 +1012,7 @@
       "Properties": {
         "AlarmDescription": "The average volume of traffic is greater 3500 KB over 10 minutes",
         "MetricName": "BytesTransferred",
-        "Namespace": "AWS/BytesTransferred",
+        "Namespace": "test/BytesTransferred",
         "Statistic": "Average",
         "Period": "300",
         "EvaluationPeriods": "2",
@@ -1169,7 +1030,7 @@
       "Properties": {
         "AlarmDescription": "The number of 404s is greater than 2 over 2 minutes",
         "MetricName": "404Count",
-        "Namespace": "AWS/404s",
+        "Namespace": "test/404s",
         "Statistic": "Sum",
         "Period": "60",
         "EvaluationPeriods": "2",
@@ -1251,13 +1112,6 @@
       "Description": "DNS name of the S3 bucket storing ELB Access Logs",
       "Value": {
         "Fn::GetAtt": ["LogsBucket", "DomainName"]
-      }
-    },
-
-    "ApiServerSecurityGroup": {
-      "Description": "Web Server Security Group",
-      "Value": {
-        "Ref": "ApiServerSecurityGroup"
       }
     },
 

@@ -28,7 +28,6 @@
     "TagValue": {
       "Description": "The EC2 tag value that identifies this as a target for deployments.",
       "Type": "String",
-      "Default": "RpgStaging",
       "AllowedPattern": "[\\x20-\\x7E]*",
       "ConstraintDescription": "Can contain only ASCII characters."
     },
@@ -45,6 +44,13 @@
       "Description": "Number of EC2 instances to launch for the ApiServer server",
       "Type": "Number",
       "Default": "1"
+    },
+
+    "ApiServerPort": {
+      "Description": "The port on which to run the Api Server",
+      "Type": "String",
+      "Default": "80",
+      "AllowedPattern": "^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
     },
 
     "OperatorEmail": {
@@ -71,6 +77,13 @@
       "MaxLength": "64",
       "AllowedPattern": "[a-zA-Z][a-zA-Z0-9_]*",
       "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    },
+    
+    "DBInstanceIdentifier": {
+      "Description": "Database instance name",
+      "Type": "String",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9\\-]*",
+      "ConstraintDescription": "Identifiers must begin with a letter; must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens."
     },
 
     "DBUser": {
@@ -125,23 +138,16 @@
       "AllowedValues": ["true", "false"],
       "ConstraintDescription": "must be true or false."
     },
-
+    
     "EnvNodeEnv": {
       "Description": "Environment variable for NODE_ENV",
       "Type": "String",
-      "Default": "staging"
-    },
-    
-    "EnvDbServer": {
-      "Description": "Environment variable for DB Connection String",
-      "Type": "String",
-      "Default": "postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/"
+      "Default": "production"
     },
     
     "EnvDbName": {
       "Description": "Environment variable for DB Name",
-      "Type": "String",
-      "Default": "rpg_staging"
+      "Type": "String"
     },
     
     "EnvTokenSecret": {
@@ -153,15 +159,13 @@
     
     "EnvMandrillUser": {
       "Description": "Environment variable for Mandrill User",
-      "Type": "String",
-      "Default": "brett.j.andrews@gmail.com"
+      "Type": "String"
     },
     
     "EnvMandrillPassword": {
       "NoEcho": "true",
       "Description": "Environment variable for Mandrill Password",
-      "Type": "String",
-      "Default": "pcimy62aFIxJJlo5D303dQ"
+      "Type": "String"
     },
     
     "EnvFacebookAppId": {
@@ -183,8 +187,7 @@
     "EnvGoogleSecret": {
       "NoEcho": "true",
       "Description": "Environment variable for Google App Secret",
-      "Type": "String",
-      "Default": "nnRYgpfWnpf5tH2YycUhl9RP"
+      "Type": "String"
     }
   },
 
@@ -211,12 +214,6 @@
           "KeyName": {
             "Ref": "KeyName"
           },
-          "ApiServerInstanceType": {
-            "Ref": "ApiServerInstanceType"
-          },
-          "ApiServerCount": {
-            "Ref": "ApiServerCount"
-          },
           "OperatorEmail": {
             "Ref": "OperatorEmail"
           },
@@ -229,7 +226,7 @@
 
     "ApiServerStack": {
       "Type": "AWS::CloudFormation::Stack",
-      "DependsOn": "NetworkStack",
+      "DependsOn": "DatabaseStack",
       "Properties": {
         "TemplateURL": "https://s3-us-west-2.amazonaws.com/rpg-cloud-formation-templates/api-server.json",
         "TimeoutInMinutes": "60",
@@ -242,6 +239,12 @@
           },
           "PublicSubnetAvailabilityZones": {
             "Fn::GetAtt": ["NetworkStack", "Outputs.PublicSubnetAvailabilityZones"]
+          },
+          "CommonSecurityGroup": {
+            "Fn::GetAtt": ["NetworkStack", "Outputs.CommonSecurityGroup"]
+          },
+          "PublicLoadBalancerSecurityGroup": {
+            "Fn::GetAtt": ["NetworkStack", "Outputs.PublicLoadBalancerSecurityGroup"]
           },
           "KeyName": {
             "Ref": "KeyName"
@@ -258,6 +261,9 @@
           "ApiServerCount": {
             "Ref": "ApiServerCount"
           },
+          "ApiServerPort": {
+            "Ref": "ApiServerPort"
+          },
           "OperatorEmail": {
             "Ref": "OperatorEmail"
           },
@@ -268,7 +274,7 @@
             "Ref": "EnvNodeEnv"
           },
           "EnvDbServer": {
-            "Ref": "EnvDbServer"
+            "Fn::GetAtt": ["DatabaseStack", "Outputs.MasterDbEndpoint"]
           },
           "EnvDbName": {
             "Ref": "EnvDbName"
@@ -300,7 +306,7 @@
 
     "DatabaseStack": {
       "Type": "AWS::CloudFormation::Stack",
-      "DependsOn": ["NetworkStack", "ApiServerStack"],
+      "DependsOn": "NetworkStack",
       "Properties": {
         "TemplateURL": "https://s3-us-west-2.amazonaws.com/rpg-cloud-formation-templates/database.json",
         "TimeoutInMinutes": "60",
@@ -308,14 +314,17 @@
           "VPC": {
             "Fn::GetAtt": ["NetworkStack", "Outputs.VPC"]
           },
-          "ApiServerSecurityGroup": {
-            "Fn::GetAtt": ["ApiServerStack", "Outputs.ApiServerSecurityGroup"]
+          "CommonSecurityGroup": {
+            "Fn::GetAtt": ["NetworkStack", "Outputs.CommonSecurityGroup"]
           },
           "SSHLocation": {
             "Ref": "SSHLocation"
           },
           "DBName": {
             "Ref": "DBName"
+          },
+          "DBInstanceIdentifier": {
+            "Ref": "DBInstanceIdentifier"
           },
           "DBUser": {
             "Ref": "DBUser"

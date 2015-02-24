@@ -9,7 +9,7 @@ var config = {
       name: 'rpg-server'
     },
     port: process.env.PORT || 5000,
-    db: (process.env.DB_SERVER || 'postgres://postgres:postgres@localhost:5432/') + (process.env.DB_NAME || 'rpg-server-development')
+    db: 'postgres://postgres:postgres@' + (process.env.DB_SERVER || 'localhost:5432') + '/' + (process.env.DB_NAME || 'rpg-server-development')
   },
   
   development: {
@@ -17,8 +17,8 @@ var config = {
     app: {
       name: 'rpg-server'
     },
-    port: process.env.PORT || 5000,
-    db: (process.env.DB_SERVER || 'postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/') + (process.env.DB_NAME || 'rpg_dev')
+    port: process.env.PORT,
+    db: 'postgres://postgres:postgres@' + (process.env.DB_SERVER) + '/' + (process.env.DB_NAME)
   },
 
   staging: {
@@ -26,8 +26,8 @@ var config = {
     app: {
       name: 'rpg-server'
     },
-    port: process.env.PORT || 5000,
-    db: (process.env.DB_SERVER || 'postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/') + (process.env.DB_NAME || 'rpg_staging')
+    port: process.env.PORT,
+    db: 'postgres://postgres:postgres@' + (process.env.DB_SERVER) + '/' + (process.env.DB_NAME)
   },
 
   production: {
@@ -35,9 +35,9 @@ var config = {
     app: {
       name: 'rpg-server'
     },
-    port: process.env.PORT || 5000,
-    db: (process.env.DB_SERVER || 'postgres://postgres:postgres@rpg-dev.cwkfx0asoq4h.us-west-1.rds.amazonaws.com:5432/') + (process.env.DB_NAME || 'rpg_production')
+    port: process.env.PORT,
+    db: 'postgres://postgres:postgres@' + (process.env.DB_SERVER) + '/' + (process.env.DB_NAME)
   }
 };
-
+console.log(config[env]);
 module.exports = config[env];

@@ -48,6 +48,16 @@
   },
 
   "Resources": {
+    "HostedZone2": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "HostedZoneConfig": {
+          "Comment": "Hosted Zone"
+        },
+        "Name": "webbysolutions2.com.au"
+      }
+    },
+    
     "FrontEndBucket": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
@@ -61,8 +71,7 @@
 
     "FrontEndLoggingBucket": {
       "Type": "AWS::S3::Bucket",
-      "Properties": {
-      },
+      "Properties": {},
       "DeletionPolicy": "Retain"
     },
 
@@ -100,14 +109,16 @@
             },
             "ViewerProtocolPolicy": "allow-all"
           },
-          "CustomErrorResponses" : [ {
-              "ErrorCode" : "404",
-              "ResponsePagePath" : "/page-not-found.html",
-              "ResponseCode" : "200",
-              "ErrorCachingMinTTL" : "30"
-          } ],
-         "PriceClass" : "PriceClass_100",
-         "ViewerCertificate" : { "CloudFrontDefaultCertificate" : "true" }
+          "CustomErrorResponses": [{
+            "ErrorCode": "404",
+            "ResponsePagePath": "/page-not-found.html",
+            "ResponseCode": "200",
+            "ErrorCachingMinTTL": "30"
+          }],
+          "PriceClass": "PriceClass_100",
+          "ViewerCertificate": {
+            "CloudFrontDefaultCertificate": "true"
+          }
         }
       }
     }
