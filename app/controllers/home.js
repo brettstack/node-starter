@@ -41,6 +41,10 @@ module.exports = function (app) {
   app.use('/', router);
 };
 
+router.get('/health-check', function(req, res, next){
+  res.status(200).json({status: 'healthy'});
+});
+
 router.get('/', isAuthenticated, function (req, res, next) {
   console.log(req);
   

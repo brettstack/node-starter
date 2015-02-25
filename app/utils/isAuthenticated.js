@@ -3,7 +3,7 @@ var secrets = require('../../config/secrets');
 var jwt = require('jsonwebtoken');
 
 module.exports = function isAuthenticated(req, res, next) {
-  var nonSecurePaths = ['/auth/facebook', '/auth/google', '/auth/local', '/auth/register', '/auth/forgot-password', '/auth/password-reset-request', '/auth/password-reset-request/reset-password'];
+  var nonSecurePaths = ['/health-check', '/auth/facebook', '/auth/google', '/auth/local', '/auth/register', '/auth/forgot-password', '/auth/password-reset-request', '/auth/password-reset-request/reset-password'];
 
   if ( _.contains(nonSecurePaths, req.path) ) return next();
 

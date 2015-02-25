@@ -1,10 +1,8 @@
 "FrontEndDNSName": {
   "Type": "AWS::Route53::RecordSet",
   "Properties": {
-    "HostedZoneName": {
-      "Fn::Join": ["", [{
-        "Ref": "HostedZone"
-      }, "."]]
+    "HostedZoneId": {
+      "Ref": "HostedZone"
     },
     "Comment": "CNAME redirect custom name to CloudFront distribution",
     "Name": {
@@ -15,7 +13,7 @@
       }, ".", {
         "Ref": "AWS::Region"
       }, ".", {
-        "Ref": "HostedZone"
+        "Ref": "DomainName"
       }]]
     },
     "Type": "CNAME",
@@ -25,41 +23,5 @@
         "Fn::GetAtt": ["FrontEndCDN", "DomainName"]
       }]]
     }]
-  }
-}
-
-"HostedZoneRecordSetGroup": {
-  "Type": "AWS::Route53::RecordSetGroup",
-  "Properties": {
-    "HostedZoneId": {
-      "Ref": "HostedZone2"
-    },
-    "RecordSets": [{
-      "Name": "webbysolutions2.com.au.",
-      "Type": "CNAME",
-      "TTL": "900",
-      "SetIdentifier": "Frontend One",
-      "Weight": "4",
-      "ResourceRecords": ["example-ec2.amazonaws.com"]
-    }, {
-      "Name": "webbysolutions2.com.au.",
-      "Type": "CNAME",
-      "TTL": "900",
-      "SetIdentifier": "Frontend Two",
-      "Weight": "6",
-      "ResourceRecords": ["example-ec2-larger.amazonaws.com"]
-    }],
-    "Comment": "Hosted Zone Record Set Group"
-  }
-},
-
-"Outputs": {
-  "FrontEndURL": {
-    "Value": {
-      "Fn::Join": ["", ["http://", {
-        "Ref": "FrontEndDNSName"
-      }]]
-    },
-    "Description": "The URL of the newly created website"
   }
 }

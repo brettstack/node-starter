@@ -4,11 +4,11 @@
   "Description": "Front End S3 Bucket with CloudFront",
 
   "Parameters": {
-    "HostedZone": {
+    "DomainName": {
       "Type": "String",
-      "Description": "The DNS name of an existing Amazon Route 53 hosted zone",
+      "Description": "Domain name to use for Hosted Zone",
       "AllowedPattern": "(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)",
-      "ConstraintDescription": "must be a valid DNS zone name."
+      "ConstraintDescription": "must be a valid domain name."
     }
   },
 
@@ -48,31 +48,38 @@
   },
 
   "Resources": {
-    "HostedZone2": {
+    "HostedZone": {
       "Type": "AWS::Route53::HostedZone",
       "Properties": {
         "HostedZoneConfig": {
           "Comment": "Hosted Zone"
         },
-        "Name": "webbysolutions2.com.au"
-      }
-    },
-    
-    "FrontEndBucket": {
-      "Type": "AWS::S3::Bucket",
-      "Properties": {
-        "AccessControl": "PublicRead",
-        "WebsiteConfiguration": {
-          "IndexDocument": "index.html",
-          "ErrorDocument": "error.html"
+        "Name": {
+          "Ref": "DomainName"
         }
       }
     },
 
-    "FrontEndLoggingBucket": {
-      "Type": "AWS::S3::Bucket",
-      "Properties": {},
-      "DeletionPolicy": "Retain"
+    "FrontEndAlias": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "HostedZone"
+        },
+        "Comment": "Alias for CloudFront distribution",
+        "Name": {
+          "Ref": "DomainName"
+        },
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": {
+            "Ref": "HostedZone"
+          },
+          "DNSName": {
+            "Ref": "FrontEndCDN"
+          }
+        }
+      }
     },
 
     "FrontEndCDN": {
@@ -121,6 +128,23 @@
           }
         }
       }
+    },
+
+    "FrontEndBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicRead",
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html",
+          "ErrorDocument": "error.html"
+        }
+      }
+    },
+
+    "FrontEndLoggingBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {},
+      "DeletionPolicy": "Retain"
     }
   },
 
@@ -139,6 +163,15 @@
         }]]
       },
       "Description": "Secure URL of S3 bucket to hold website content"
+    },
+
+    "FrontEndURL": {
+      "Value": {
+        "Fn::Join": ["", ["http://", {
+          "Ref": "FrontEndAlias"
+        }]]
+      },
+      "Description": "The URL of the newly created website"
     }
   }
 }
