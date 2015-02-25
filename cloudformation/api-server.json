@@ -878,16 +878,6 @@
               "yum install -y aws-cli\n",
               "yum install nodejs npm --enablerepo=epel -y\n",
 
-              "#Reroute IP Tables\n",
-              "iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port ", {
-                "Ref": "ApiServerPort"
-              }, " || error_exit 'Failed to set up iptables.' \n",
-              
-              "#Add Environment Variables to bashrc\n",
-              "echo \"export NODE_ENV=", {
-                  "Ref": "EnvNodeEnv"
-                }, "\" >> /home/ec2-user/.bashrc || error_exit 'Failed to set environment variables in bashrc. \n",
-
               "# Error Helper function.\n",
               "function error_exit\n",
               "{\n",
@@ -901,6 +891,47 @@
               }, "\n",
               "  exit 1\n",
               "}\n",
+
+              "#Reroute IP Tables\n",
+              "iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port ", {
+                "Ref": "ApiServerPort"
+              }, " || error_exit 'Failed to set up iptables.' \n",
+
+              "#Add Environment Variables to bashrc\n",
+              "echo \"export NODE_ENV=", {
+                  "Ref": "EnvNodeEnv"
+                }, "\n",
+                "export DB_SERVER=", {
+                  "Ref": "EnvDbServer"
+                }, "\n",
+                "export DB_NAME=", {
+                  "Ref": "EnvDbName"
+                }, "\n",
+                "export TOKEN_SECRET=", {
+                  "Ref": "EnvTokenSecret"
+                }, "\n",
+                "export MANDRILL_USER=", {
+                  "Ref": "EnvMandrillUser"
+                }, "\n",
+                "export MANDRILL_PASSWORD=", {
+                  "Ref": "EnvMandrillPassword"
+                }, "\n",
+                "export FACEBOOK_ID=", {
+                  "Ref": "EnvFacebookAppId"
+                }, "\n",
+                "export FACEBOOK_SECRET=", {
+                  "Ref": "EnvFacebookSecret"
+                }, "\n",
+                "export GOOGLE_ID=", {
+                  "Ref": "EnvGoogleAppId"
+                }, "\n",
+                "export GOOGLE_SECRET=", {
+                  "Ref": "EnvGoogleSecret"
+                }, "\n",
+                "export PORT=", {
+                  "Ref": "ApiServerPort"
+                }, "\" >> /home/ec2-user/.bashrc || error_exit 'Failed to set environment variables in /home/ec2-user/.bashrc'\n",
+              "source /home/ec2-user/.bashrc\n",
 
               "# Install the AWS CodeDeploy Agent.\n",
               "cd /home/ec2-user/\n",

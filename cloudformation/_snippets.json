@@ -28,45 +28,6 @@
   }
 }
 
-  "/home/ec2-user/.bashrc": {
-    "content": {
-      "Fn::Join": ["", ["export NODE_ENV=", {
-          "Ref": "EnvNodeEnv"
-        }, "\n",
-        "export DB_SERVER=", {
-          "Ref": "EnvDbServer"
-        }, "\n",
-        "export DB_NAME=", {
-          "Ref": "EnvDbName"
-        }, "\n",
-        "export TOKEN_SECRET=", {
-          "Ref": "EnvTokenSecret"
-        }, "\n",
-        "export MANDRILL_USER=", {
-          "Ref": "EnvMandrillUser"
-        }, "\n",
-        "export MANDRILL_PASSWORD=", {
-          "Ref": "EnvMandrillPassword"
-        }, "\n",
-        "export FACEBOOK_ID=", {
-          "Ref": "EnvFacebookAppId"
-        }, "\n",
-        "export FACEBOOK_SECRET=", {
-          "Ref": "EnvFacebookSecret"
-        }, "\n",
-        "export GOOGLE_ID=", {
-          "Ref": "EnvGoogleAppId"
-        }, "\n",
-        "export GOOGLE_SECRET=", {
-          "Ref": "EnvGoogleSecret"
-        }, "\n",
-        "export PORT=", {
-          "Ref": "ApiServerPort"
-        }
-      ]]
-    }
-  },
-
 "HostedZoneRecordSetGroup": {
   "Type": "AWS::Route53::RecordSetGroup",
   "Properties": {

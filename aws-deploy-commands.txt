@@ -1,0 +1,6 @@
+aws deploy delete-deployment-group --application-name Rpg --deployment-group-name staging
+aws deploy create-deployment-group --application-name Rpg --deployment-group-name staging --deployment-config-name CodeDeployDefault.OneAtATime --auto-scaling-groups RpgStagingApiBashrc-ApiServerAutoScalingGroup-OGAKITJ1OECW --service-role-arn arn:aws:iam::152748401524:role/RpgStagingApiBashrc-CodeDeployTrustRole-186S1SRN7MTX3
+aws deploy create-deployment --application-name Rpg --deployment-group-name staging --github-location repository=breandr/node-starter,commitId=c2b75b83d1d67c47a9ff1cd1c7b722e862aa2d46
+aws deploy get-deployment --deployment-id d-GT6J2RNA7
+aws deploy list-deployment-instances --deployment-id d-GT6J2RNA7
+aws deploy get-deployment-instance --deployment-id d-GT6J2RNA7 --instance-id i-55e8609c
