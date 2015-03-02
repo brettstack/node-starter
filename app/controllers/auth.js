@@ -36,7 +36,7 @@ router.route('/auth/register')
         });
 
         user.save().then(function() {
-          res.json({ token: createToken(user) });
+          res.json({ authToken: createToken(user) });
 
           mailer.sendEmail(user.email, 'Welcome to __APP_NAME_TITLE__', 'hello, ' + user.displayName);
         });
@@ -90,7 +90,7 @@ router.route('/auth/password-reset-request/reset-password')
         bcrypt.hash(req.body.password, salt, function(err, hash) {
           user.save().then(function() {
             passwordResetRequest.destroy();
-            res.json({ token: createToken(user) });
+            res.json({ authToken: createToken(user) });
           });
         });
       });
@@ -142,7 +142,7 @@ router.route('/auth/local')
         return res.status(401).json({ message: 'Password mismatch' });
       }
 
-      res.json({ token: createToken(user) });
+      res.json({ authToken: createToken(user) });
     });
   });
 });
@@ -208,7 +208,7 @@ router.route('/auth/facebook')
               user.save().then(function() {
                 var token = createToken(user, secrets.facebook.clientSecret);
                 res.json({
-                  token: token
+                  authToken: token
                 });
               });
             });
@@ -224,7 +224,7 @@ router.route('/auth/facebook')
             if (existingUser) {
               var token = createToken(existingUser, secrets.facebook.clientSecret);
               return res.json({
-                token: token
+                authToken: token
               });
             }
             var user = User.build();
@@ -234,7 +234,7 @@ router.route('/auth/facebook')
             user.save().then(function() {
               var token = createToken(user, secrets.facebook.clientSecret);
               res.json({
-                token: token
+                authToken: token
               });
             });
           });
@@ -284,7 +284,7 @@ router.route('/auth/google')
             user.displayName = user.displayName || profile.name;
             user.save().then(function() {
               var token = createToken(user);
-              res.json({ token: token });
+              res.json({ authToken: token });
             });
           });
         });
@@ -296,14 +296,14 @@ router.route('/auth/google')
           }
         }).then(function(existingUser) {
           if (existingUser) {
-            return res.json({ token: createToken(existingUser) });
+            return res.json({ authToken: createToken(existingUser) });
           }
           var user = User.build();
           user.google = profile.sub;
           user.displayName = profile.name;
           user.save().then(function(err) {
             var token = createToken(user);
-            res.json({ token: token });
+            res.json({ authToken: token });
           });
         });
       }

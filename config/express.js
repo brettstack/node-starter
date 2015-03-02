@@ -8,6 +8,8 @@ var compression = require('compression');
 var methodOverride = require('method-override');
 var cors = require('cors');
 var isAuthenticated = require('../app/utils/isAuthenticated');
+var http = require('http');
+var Primus = require('Primus');
 // var passport = require('passport');
 // var passportConfig = require('./passport');
 // var FacebookStrategy = require('passport-facebook').Strategy;
@@ -59,4 +61,42 @@ module.exports = function(app, config) {
       error: app.get('env') === 'development' ? err : {}
     });
   });
+
+
+  // var server = http.createServer(app);
+  // var primus = new Primus(server, {
+  //   transformer: 'engine.io',
+  //   port: 5000
+  // });
+  var primus = Primus.createServer(function(spark) {}, {
+    transformer: 'engine.io',
+    port: 5001
+  });
+
+  primus.authorize(function(req, done) {
+    var auth;
+
+    try {
+      // auth = authParser(req.headers['authorization'])
+    } catch (ex) {
+      return done(ex)
+    }
+
+    //
+    // Do some async auth check
+    //
+    // authCheck(auth, done);
+    return done();
+  });
+  
+  primus.on('connection', function(spark) {
+    spark.write('hello connnection');
+    spark.on('data', function message(data) {
+      console.log(data);
+    });
+  });
+  primus.on('disconnection', function(spark) {
+    // the spark that disconnected
+  });
+  primus.save(__dirname + '/primus.js');
 };

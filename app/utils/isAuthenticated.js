@@ -1,6 +1,9 @@
 var _ = require('lodash');
 var secrets = require('../../config/secrets');
 var jwt = require('jsonwebtoken');
+var moment = require('moment');
+var models = require('../models');
+var User = models.User;
 
 module.exports = function isAuthenticated(req, res, next) {
   var nonSecurePaths = ['/health-check', '/auth/facebook', '/auth/google', '/auth/local', '/auth/register', '/auth/forgot-password', '/auth/password-reset-request', '/auth/password-reset-request/reset-password'];
@@ -19,8 +22,8 @@ module.exports = function isAuthenticated(req, res, next) {
   if (now > payload.exp) {
     return res.status(401).json({ message: 'Token has expired.' });
   }
-
-  User.findById(payload.sub).then(function(user) {
+  
+  User.findOne(payload.sub).then(function(user) {
     if (!user) {
       return res.status(400).json({ message: 'User no longer exists.' });
     }

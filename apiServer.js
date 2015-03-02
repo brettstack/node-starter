@@ -7,7 +7,9 @@ var app = express();
 require('./config/express')(app, config);
 
 models.sequelize
-  .sync()
+  .sync({
+    force: false
+  })
   // .authenticate()
   .complete(function(err) {
     if (err) {
