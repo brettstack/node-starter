@@ -1,0 +1,181 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "Creates DynamoDB tables and IAM Roles and Policies.",
+
+  "Parameters": {
+    "HeroTableReadCapacityUnits": {
+      "Description": "Provisioned read throughput for Hero table",
+      "Type": "Number",
+      "Default": "1",
+      "MinValue": "1",
+      "MaxValue": "10000",
+      "ConstraintDescription": "must be between 1 and 10000"
+    },
+
+    "HeroTableWriteCapacityUnits": {
+      "Description": "Provisioned write throughput for Hero table",
+      "Type": "Number",
+      "Default": "1",
+      "MinValue": "1",
+      "MaxValue": "10000",
+      "ConstraintDescription": "must be between 1 and 10000"
+    }
+  },
+
+  "Resources": {
+    "CognitoAuthRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "ec2.amazonaws.com"
+              ]
+            },
+            "Action": [
+              "sts:AssumeRole"
+            ]
+          }]
+        },
+        "Path": "/"
+      }
+    },
+    "CognitoAuthRolePolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "CognitoAuth",
+        "PolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "mobileanalytics:PutEvents",
+              "cognito-sync:*"
+            ],
+            "Resource": "*"
+          }]
+        },
+        "Roles": [{
+          "Ref": "CognitoAuthRole"
+        }]
+      }
+    },
+    "HeroTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [{
+          "AttributeName": "userId",
+          "AttributeType": "N"
+        }, {
+          "AttributeName": "name",
+          "AttributeType": "S"
+        }, {
+          "AttributeName": "class",
+          "AttributeType": "S"
+        }],
+        "KeySchema": [{
+          "AttributeName": "userId",
+          "KeyType": "HASH"
+        }, {
+          "AttributeName": "name",
+          "KeyType": "RANGE"
+        }],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": {
+            "Ref": "HeroTableReadCapacityUnits"
+          },
+          "WriteCapacityUnits": {
+            "Ref": "HeroTableWriteCapacityUnits"
+          }
+        },
+        "LocalSecondaryIndexes": [{
+          "IndexName": "ClassLocalIndex",
+          "KeySchema": [{
+            "AttributeName": "userId",
+            "KeyType": "HASH"
+          }, {
+            "AttributeName": "class",
+            "KeyType": "RANGE"
+          }],
+          "Projection": {
+            "ProjectionType": "KEYS_ONLY"
+          }
+        }],
+        "GlobalSecondaryIndexes": [{
+          "IndexName": "NameGlobalIndex",
+          "KeySchema": [{
+            "AttributeName": "name",
+            "KeyType": "HASH"
+          }],
+          "Projection": {
+            "ProjectionType": "KEYS_ONLY"
+          },
+          "ProvisionedThroughput": {
+            "ReadCapacityUnits": {
+              "Ref": "HeroTableReadCapacityUnits"
+            },
+            "WriteCapacityUnits": {
+              "Ref": "HeroTableWriteCapacityUnits"
+            }
+          }
+        }]
+      }
+    },
+    
+    "HeroTableCognitoPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "HeroTableCognito",
+        "PolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:BatchGetItem",
+              "dynamodb:GetItem",
+              "dynamodb:GetRecords",
+              "dynamodb:Query",
+              "dynamodb:Scan",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem"
+            ],
+            "Resource": {
+              "Fn::Join": ["", ["arn:aws:dynamodb:", {
+                "Ref": "AWS::Region"
+              }, ":", {
+                "Ref": "AWS::AccountId"
+              }, ":table/", {
+                "Ref": "HeroTable"
+              }]]
+            },
+            "Condition": {
+              "ForAllValues:StringEquals": {
+                "dynamodb:LeadingKeys": ["${www.amazon.com:user_id}", "${graph.facebook.com:user_id}", "${accounts.google.com:user_id}"],
+                "dynamodb:Attributes": [
+                  "userId", "name", "class"
+                ]
+              },
+              "StringEqualsIfExists": {
+                "dynamodb:Select": "SPECIFIC_ATTRIBUTES"
+              }
+            }
+          }]
+        },
+        "Roles": [{
+          "Ref": "CognitoAuthRole"
+        }]
+      }
+    }
+  },
+
+  "Outputs": {
+    "HeroTableName": {
+      "Value": {
+        "Ref": "HeroTable"
+      },
+      "Description": "Hero table name"
+    }
+  }
+}

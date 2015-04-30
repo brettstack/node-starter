@@ -1,16 +1,14 @@
 var express = require('express'),
   config = require('./config/config'),
   models = require('./app/models');
+  // epilogue = require('epilogue');
 
 var app = express();
-
+// require('./config/epilogue')(app, models);
 require('./config/express')(app, config);
 
 models.sequelize
-  .sync({
-    force: false
-  })
-  // .authenticate()
+  .sync()
   .complete(function(err) {
     if (err) {
       throw err[0];

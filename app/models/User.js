@@ -6,7 +6,7 @@ module.exports = function(sequelize, DataTypes) {
     email: {
       type: DataTypes.STRING,
       unique: true,
-      valideate: {
+      validate: {
         isEmail: true
       }
     },
@@ -24,10 +24,22 @@ module.exports = function(sequelize, DataTypes) {
     freezeTableName: true,
     timestamps: true,
     paranoid: true,
-    classMethods: {
-      associate: function(models) {
-        User.hasMany(models.PasswordResetRequest)
-      }
+    name: {
+      plural: 'userCollection'
+    },
+    associate: function(models) {
+      User.hasMany(models.PasswordResetRequest);
+      User.hasMany(models.Hero, {
+        foreignKey: 'userId',
+        plural: 'heroCollection'
+      });
+    },
+    defineRoutes: function(models, epilogue) {
+      console.log('user')
+      return epilogue.resource({
+        model: User,
+        endpoints: ['/user', '/user/:id']
+      });
     },
     instanceMethods: {
       getGravatar: function(size) {
@@ -36,7 +48,7 @@ module.exports = function(sequelize, DataTypes) {
         var md5 = crypto.createHash('md5').update(this.email).digest('hex');
         return 'https://gravatar.com/avatar/' + md5 + '?s=' + size + '&d=retro';
       },
-      comparePassword : function(candidatePassword, cb) {
+      comparePassword: function(candidatePassword, cb) {
         bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
           if (err) return cb(err);
           cb(null, isMatch);

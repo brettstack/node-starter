@@ -58,7 +58,7 @@ passport.use(new LocalStrategy({
  */
 
 passport.use(new FacebookStrategy(secrets.facebook, function(req, accessToken, refreshToken, profile, done) {
-  if (req.user) {
+  if (req.me) {
     User.findOne({
       facebook: profile.id
     }, function(err, existingUser) {
@@ -70,7 +70,7 @@ passport.use(new FacebookStrategy(secrets.facebook, function(req, accessToken, r
         });
         done(err);
       } else {
-        User.findById(req.user.id, function(err, user) {
+        User.findById(req.me.id, function(err, user) {
           user.facebook = profile.id;
           user.tokens.push({
             kind: 'facebook',
@@ -126,7 +126,7 @@ passport.use(new FacebookStrategy(secrets.facebook, function(req, accessToken, r
  * Sign in with Google.
  */
 passport.use(new GoogleStrategy(secrets.google, function(req, accessToken, refreshToken, profile, done) {
-  if (req.user) {
+  if (req.me) {
     User.findOne({
       google: profile.id
     }, function(err, existingUser) {
@@ -138,7 +138,7 @@ passport.use(new GoogleStrategy(secrets.google, function(req, accessToken, refre
         });
         done(err);
       } else {
-        User.findById(req.user.id, function(err, user) {
+        User.findById(req.me.id, function(err, user) {
           user.google = profile.id;
           user.tokens.push({
             kind: 'google',
@@ -203,7 +203,7 @@ module.exports.isAuthenticated = function(req, res, next) {
 module.exports.isAuthorized = function(req, res, next) {
   var provider = req.path.split('/').slice(-1)[0];
 
-  if (_.find(req.user.tokens, {
+  if (_.find(req.me.tokens, {
     kind: provider
   })) {
     next();

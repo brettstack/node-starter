@@ -10,6 +10,7 @@ var cors = require('cors');
 var isAuthenticated = require('../app/utils/isAuthenticated');
 var http = require('http');
 var Primus = require('Primus');
+var models = require('../app/models');
 // var passport = require('passport');
 // var passportConfig = require('./passport');
 // var FacebookStrategy = require('passport-facebook').Strategy;
@@ -44,17 +45,26 @@ module.exports = function(app, config) {
   app.use(isAuthenticated);
   // app.all(isAuthenticated);
 
+  
   // Initialise controllers
-  globby.sync([config.root + '/app/controllers/*.js', '!' + config.root + '/app/controllers/*.spec.js']).forEach(function(file) {
+  globby.sync([
+    config.root + '/app/controllers/*.js',
+    '!' + config.root + '/app/controllers/*.spec.js'
+  ]).forEach(function(file) {
     require(file)(app);
   });
+  
+  //Add basic model controllers
+  require('./epilogue')(app, models);
 
+  // 404
   app.use(function(req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
     next(err);
   });
 
+  // 500
   app.use(function(err, req, res, next) {
     res.status(err.status || 500).json({
       message: err.message,
@@ -88,7 +98,7 @@ module.exports = function(app, config) {
     // authCheck(auth, done);
     return done();
   });
-  
+
   primus.on('connection', function(spark) {
     spark.write('hello connnection');
     spark.on('data', function message(data) {
